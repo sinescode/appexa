@@ -29,6 +29,10 @@
     <color name="gray_600">#4B5563</color>
     <color name="gray_700">#374151</color>
     
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+    <color name="teal_200">#03DAC5</color>
+
     <!-- Text Colors -->
     <color name="text_primary">#111827</color>
     <color name="text_secondary">#6B7280</color>
