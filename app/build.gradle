@@ -28,8 +28,8 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled false   // disable for testing
-            shrinkResources false // disable for testing
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -55,16 +55,40 @@ android {
 
 dependencies {
     implementation "androidx.core:core-ktx:1.12.0"
+
+    // Compose
     implementation "androidx.activity:activity-compose:1.9.0"
     implementation "androidx.compose.ui:ui:1.6.0"
     implementation "androidx.compose.material3:material3:1.2.0-alpha04"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.7.3"
+    implementation "androidx.compose.ui:ui-tooling-preview:1.6.0"
+    debugImplementation "androidx.compose.ui:ui-tooling:1.6.0"
+
+    // Lifecycle (must match Compose expectations)
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2"
+
+    // Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
+
+    // Networking
     implementation "com.squareup.okhttp3:okhttp:4.11.0"
     implementation "com.squareup.okhttp3:logging-interceptor:4.11.0"
+
+    // JSON
     implementation "com.squareup.moshi:moshi:1.15.0"
     implementation "com.squareup.moshi:moshi-kotlin:1.15.0"
     implementation "org.json:json:20230227"
+}
 
-
+// Force dependency resolution to avoid conflicts
+configurations.all {
+    resolutionStrategy {
+        force 'androidx.lifecycle:lifecycle-runtime:2.6.2'
+        force 'androidx.lifecycle:lifecycle-common:2.6.2'
+        force 'androidx.lifecycle:lifecycle-viewmodel:2.6.2'
+        force 'androidx.lifecycle:lifecycle-livedata-core:2.6.2'
+        force 'androidx.lifecycle:lifecycle-common-java8:2.6.2'
+        force 'androidx.lifecycle:lifecycle-process:2.6.2'
+    }
 }
