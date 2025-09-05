@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace "com.example.minimalapp"
+    namespace "com.turjaun.instacheck"
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.example.minimalapp"
+        applicationId "com.turjaun.instacheck"
         minSdk 21
         targetSdk 34
         versionCode 1
@@ -54,7 +54,17 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0"
-    implementation 'androidx.core:core-ktx:1.13.0'
-    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation "androidx.core:core-ktx:1.12.0"
+    implementation "androidx.activity:activity-compose:1.9.0"
+    implementation "androidx.compose.ui:ui:1.6.0"
+    implementation "androidx.compose.material3:material3:1.2.0-alpha04"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.7.3"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
+    implementation "com.squareup.okhttp3:okhttp:4.11.0"
+    implementation "com.squareup.okhttp3:logging-interceptor:4.11.0"
+    implementation "com.squareup.moshi:moshi:1.15.0"
+    implementation "com.squareup.moshi:moshi-kotlin:1.15.0"
+    implementation "org.json:json:20230227"
+
+
 }

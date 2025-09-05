@@ -57,7 +57,8 @@ jobs:
 
       # 7️⃣ Build release APK using Gradle wrapper
       - name: Build APK
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease -Pandroid.injected.build.abi=arm64-v8a
+
 
       # 8️⃣ Upload APK as artifact
       - name: Upload APK

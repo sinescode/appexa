@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors -->
+    <color name="indigo_50">#EEF2FF</color>
+    <color name="indigo_500">#6366F1</color>
+    <color name="indigo_600">#4F46E5</color>
+    <color name="indigo_700">#4338CA</color>
+    <color name="indigo_300">#A5B4FC</color>
+    
+    <!-- Red Colors -->
+    <color name="red_50">#FEF2F2</color>
+    <color name="red_600">#DC2626</color>
+    <color name="red_700">#B91C1C</color>
+    
+    <!-- Green Colors -->
+    <color name="green_50">#ECFDF5</color>
+    <color name="green_600">#16A34A</color>
+    <color name="green_700">#15803D</color>
+    
+    <!-- Yellow Colors -->
+    <color name="yellow_50">#FFFBEB</color>
+    <color name="yellow_700">#B45309</color>
+    
+    <!-- Gray Colors -->
+    <color name="gray_50">#F9FAFB</color>
+    <color name="gray_100">#F3F4F6</color>
+    <color name="gray_200">#E5E7EB</color>
+    <color name="gray_500">#6B7280</color>
+    <color name="gray_600">#4B5563</color>
+    <color name="gray_700">#374151</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#111827</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="text_disabled">#9CA3AF</color>
+</resources>
