@@ -4,6 +4,7 @@ plugins {
 }
 
 android {
+    namespace "com.example.minimalapp"
     compileSdk 33
 
     defaultConfig {
