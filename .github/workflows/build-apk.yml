@@ -2,9 +2,9 @@ name: Build Android APK (arm64)
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -22,29 +22,44 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # 3️⃣ Install Android SDK
-      - name: Setup Android SDK
+      # 3️⃣ Install Android SDK 34 (arm64)
+      - name: Install Android SDK
         uses: android-actions/setup-android@v3
         with:
           api-level: 34
           target: android-34
           arch: arm64-v8a
-          components: build-tools;34.0.0,platform-tools,platforms;android-34
+          components: build-tools;34.0.0
 
-      # 4️⃣ Generate debug keystore for signing
+      # 4️⃣ Generate debug keystore for signing release APK
       - name: Generate debug keystore
         run: |
           mkdir -p $HOME/.android
-          keytool -genkey -v -keystore $HOME/.android/debug.keystore \
+          keytool -genkeypair -v \
+            -keystore $HOME/.android/debug.keystore \
             -storepass android -alias androiddebugkey -keypass android \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Minimal App, OU=Dev, O=Example, L=City, ST=State, C=US"
 
-      # 5️⃣ Build release APK using Gradle wrapper
-      - name: Build APK
-        run: ./gradlew assembleRelease --no-daemon
+      # 5️⃣ Install Gradle 8.7 and generate wrapper
+      - name: Install Gradle and generate wrapper
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip wget
+          wget https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          unzip -q gradle-8.7-bin.zip -d $HOME/gradle
+          export PATH=$HOME/gradle/gradle-8.7/bin:$PATH
+          gradle wrapper --gradle-version 8.7
 
-      # 6️⃣ Upload the APK artifact
+      # 6️⃣ Make gradlew executable
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # 7️⃣ Build release APK using Gradle wrapper
+      - name: Build APK
+        run: ./gradlew assembleRelease
+
+      # 8️⃣ Upload APK as artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
