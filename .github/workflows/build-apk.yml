@@ -20,7 +20,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # ✅ Pin Gradle to 8.7 (works with AGP 8.2.2)
+      # ✅ Use Gradle 8.7 (compatible with AGP 8.2.2)
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -29,10 +29,10 @@ jobs:
       - name: Install Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 33
-          target: android-33
+          api-level: 34
+          target: android-34
           arch: arm64-v8a
-          components: build-tools;33.0.2
+          components: build-tools;34.0.0
 
       - name: Build APK
         run: gradle assembleRelease
