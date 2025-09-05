@@ -51,20 +51,31 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    buildFeatures {
+        compose true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = '1.5.11'
+    }
 }
 
 dependencies {
+    // Compose BOM for consistent versions
+    implementation platform('androidx.compose:compose-bom:2024.03.00')
+
+    // Compose core dependencies
+    implementation 'androidx.activity:activity-compose'
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation 'androidx.compose.material3:material3'
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+
     implementation "androidx.core:core-ktx:1.12.0"
-
-    // Compose
-    implementation "androidx.activity:activity-compose:1.9.0"
-    implementation "androidx.compose.ui:ui:1.6.0"
     implementation "com.google.android.material:material:1.10.0"
-    implementation "androidx.compose.material3:material3:1.2.0-alpha04"
-    implementation "androidx.compose.ui:ui-tooling-preview:1.6.0"
-    debugImplementation "androidx.compose.ui:ui-tooling:1.6.0"
 
-    // Lifecycle (must match Compose expectations)
+    // Lifecycle (versions should match Compose expectations)
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
     implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2"

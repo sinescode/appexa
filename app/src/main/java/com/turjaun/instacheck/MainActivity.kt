@@ -1,13 +1,14 @@
 package com.turjaun.instacheck
 
 import android.Manifest
-import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,10 +26,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.core.content.PermissionChecker
 import kotlinx.coroutines.launch
 import org.json.JSONArray
-import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -39,13 +38,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-
             val context = LocalContext.current
-            var tabIndex by remember { mutableStateOf(0) } // 0 = file, 1 = text
+            var tabIndex by remember { mutableStateOf(0) }
             var textInput by remember { mutableStateOf(TextFieldValue("")) }
             var filename by remember { mutableStateOf("usernames") }
-
-            val scope = rememberCoroutineScope()
 
             val pickFileLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.GetContent()
@@ -53,22 +49,12 @@ class MainActivity : ComponentActivity() {
                 uri?.let { processFileUri(it, context) { name -> filename = name } }
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                // Header
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+
                 Text(
                     text = "Instagram Username Checker",
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color(0xFF6366F1),
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "Check many usernames quickly — mobile optimized",
-                    style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
 
@@ -96,7 +82,6 @@ class MainActivity : ComponentActivity() {
 
                 Spacer(Modifier.height(12.dp))
 
-                // File or Text Input
                 if(tabIndex == 0) {
                     Button(
                         onClick = { pickFileLauncher.launch("*/*") },
@@ -116,61 +101,34 @@ class MainActivity : ComponentActivity() {
 
                 Spacer(Modifier.height(12.dp))
 
-                // Start button
-                Button(
-                    onClick = {
-                        val usernames = if(tabIndex==0) viewModel.results.map{ it.username } else textInput.text.lines().filter { it.isNotBlank() }
-                        if(usernames.isEmpty()) {
-                            Toast.makeText(context,"No usernames found!",Toast.LENGTH_SHORT).show()
-                        } else {
-                            viewModel.startChecking(usernames, filename)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Start Checking") }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = {
+                            val usernames = if(tabIndex==0) viewModel.results.map{ it.username } else textInput.text.lines().filter { it.isNotBlank() }
+                            if(usernames.isEmpty()) {
+                                Toast.makeText(context,"No usernames found!",Toast.LENGTH_SHORT).show()
+                            } else {
+                                viewModel.startChecking(usernames, filename)
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Start Checking") }
 
-                Spacer(Modifier.height(12.dp))
+                    Button(
+                        onClick = { viewModel.cancel() },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B3B)),
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Cancel") }
+                }
 
-                // Progress bar + stats
+                Spacer(Modifier.height(8.dp))
+
                 LinearProgressIndicator(progress = viewModel.progress, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(4.dp))
                 Text("Processed: ${viewModel.processedCount}/${viewModel.totalCount}", style = MaterialTheme.typography.bodySmall)
 
                 Spacer(Modifier.height(8.dp))
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatCard("Active", viewModel.stats.activeCount, Color(0xFFFFE6E6))
-                    StatCard("Available", viewModel.stats.availableCount, Color(0xFFE6FFE6))
-                    StatCard("Error", viewModel.stats.errorCount, Color(0xFFFFFFE6))
-                    StatCard("Total", viewModel.totalCount, Color(0xFFF3F4F6))
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = { viewModel.cancel() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B3B)),
-                        modifier = Modifier.weight(1f)
-                    ) { Text("Cancel") }
-
-                    Button(
-                        onClick = {
-                            if(PermissionChecker.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)==PermissionChecker.PERMISSION_GRANTED) {
-                                viewModel.saveResults(context, filename)
-                                Toast.makeText(context,"Saved to Downloads/Insta_Saver",Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context,"Storage permission required!",Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
-                        modifier = Modifier.weight(1f)
-                    ) { Text("Download") }
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                // Results
                 LazyColumn(modifier = Modifier.fillMaxHeight()) {
                     items(viewModel.results.reversed()) { item ->
                         ResultCard(item)
@@ -218,20 +176,6 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun StatCard(title: String, count: Int, bg: Color) {
-    Column(
-        modifier = Modifier
-            .weight(1f)
-            .background(bg, RoundedCornerShape(8.dp))
-            .padding(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(count.toString(), style = MaterialTheme.typography.titleMedium)
-        Text(title, style = MaterialTheme.typography.bodySmall)
-    }
-}
-
-@Composable
 fun ResultCard(result: UsernameResult) {
     val (bg, textColor) = when(result.status) {
         UsernameStatus.ACTIVE -> Color(0xFFFFEBEB) to Color(0xFFB91C1C)
@@ -244,8 +188,7 @@ fun ResultCard(result: UsernameResult) {
         modifier = Modifier
             .fillMaxWidth()
             .background(bg, RoundedCornerShape(8.dp))
-            .padding(8.dp)
-            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp)),
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(result.username, color = textColor)

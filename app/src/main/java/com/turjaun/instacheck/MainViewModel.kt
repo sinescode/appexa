@@ -2,8 +2,10 @@ package com.turjaun.instacheck
 
 import android.content.Context
 import android.os.Environment
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -13,8 +15,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileWriter
-import java.util.*
-import kotlin.random.Random
 
 enum class UsernameStatus { ACTIVE, AVAILABLE, ERROR, CANCELLED }
 
@@ -35,7 +35,7 @@ class MainViewModel {
 
     // State
     var results = mutableStateListOf<UsernameResult>()
-    var stats = Stats()
+    var stats by mutableStateOf(Stats())
     var processedCount by mutableStateOf(0)
     var totalCount by mutableStateOf(0)
     var progress by mutableStateOf(0f)
@@ -62,6 +62,9 @@ class MainViewModel {
         "Origin" to "https://www.instagram.com"
     )
 
+    // Use a single CoroutineScope
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     fun startChecking(usernames: List<String>, filename: String) {
         cancel() // Cancel previous
 
@@ -73,12 +76,10 @@ class MainViewModel {
         active = true
         savedAccounts.clear()
 
-        job = CoroutineScope(Dispatchers.IO).launch {
+        job = scope.launch {
             val semaphore = Semaphore(maxConcurrent)
             val tasks = usernames.map { username ->
-                async {
-                    checkUsername(username, semaphore)
-                }
+                async { checkUsername(username, semaphore) }
             }
             tasks.awaitAll()
         }
@@ -99,15 +100,13 @@ class MainViewModel {
 
                     val response = client.newCall(request).execute()
                     when {
-                        response.code == 404 -> {
-                            status = UsernameStatus.AVAILABLE
-                        }
+                        response.code == 404 -> status = UsernameStatus.AVAILABLE
                         response.isSuccessful -> {
                             val body = response.body?.string()
-                            if (body != null && body.contains("\"user\"")) {
-                                status = UsernameStatus.ACTIVE
+                            status = if (body != null && body.contains("\"user\"")) {
+                                UsernameStatus.ACTIVE
                             } else {
-                                status = UsernameStatus.AVAILABLE
+                                UsernameStatus.AVAILABLE
                             }
                         }
                         else -> {
@@ -118,30 +117,30 @@ class MainViewModel {
                         }
                     }
 
-                    val message = when(status) {
+                    val message = when (status) {
                         UsernameStatus.ACTIVE -> "[ACTIVE] $username"
                         UsernameStatus.AVAILABLE -> "[AVAILABLE] $username"
                         UsernameStatus.ERROR -> "[ERROR] $username"
-                        else -> "[CANCELLED] $username"
+                        UsernameStatus.CANCELLED -> "[CANCELLED] $username"
                     }
 
                     results.add(UsernameResult(username, status, message))
 
                     // Update stats
-                    when(status) {
+                    when (status) {
                         UsernameStatus.ACTIVE -> {
-                            stats.activeCount++
+                            stats = stats.copy(activeCount = stats.activeCount + 1)
                             val obj = JSONObject()
                             obj.put("username", username)
                             savedAccounts.add(obj)
                         }
-                        UsernameStatus.AVAILABLE -> stats.availableCount++
-                        UsernameStatus.ERROR -> stats.errorCount++
-                        else -> stats.cancelledCount++
+                        UsernameStatus.AVAILABLE -> stats = stats.copy(availableCount = stats.availableCount + 1)
+                        UsernameStatus.ERROR -> stats = stats.copy(errorCount = stats.errorCount + 1)
+                        UsernameStatus.CANCELLED -> stats = stats.copy(cancelledCount = stats.cancelledCount + 1)
                     }
 
                     processedCount++
-                    progress = if(totalCount > 0) processedCount.toFloat() / totalCount else 0f
+                    progress = if (totalCount > 0) processedCount.toFloat() / totalCount else 0f
                     return
                 } catch (e: Exception) {
                     retry++
@@ -151,11 +150,11 @@ class MainViewModel {
             }
         }
 
-        if(!active) {
+        if (!active) {
             results.add(UsernameResult(username, UsernameStatus.CANCELLED, "[CANCELLED] $username"))
-            stats.cancelledCount++
+            stats = stats.copy(cancelledCount = stats.cancelledCount + 1)
             processedCount++
-            progress = if(totalCount > 0) processedCount.toFloat() / totalCount else 0f
+            progress = if (totalCount > 0) processedCount.toFloat() / totalCount else 0f
         }
     }
 
