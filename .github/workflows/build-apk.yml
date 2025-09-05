@@ -33,11 +33,15 @@ jobs:
       - name: Accept licenses
         run: yes | sdkmanager --licenses
 
-      # 5. Build Release APK
-      - name: Build APK
-        run: ./gradlew assembleRelease
+      # 5. Install Gradle (since no gradlew in repo)
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      # 6. Upload the built APK
+      # 6. Build Release APK
+      - name: Build APK
+        run: gradle assembleRelease
+
+      # 7. Upload the built APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
