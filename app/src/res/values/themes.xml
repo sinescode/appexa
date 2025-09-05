@@ -1,38 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Base application theme -->
     <style name="Theme.InstaCheck" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Primary brand color -->
         <item name="colorPrimary">@color/indigo_600</item>
         <item name="colorPrimaryVariant">@color/indigo_700</item>
         <item name="colorOnPrimary">@android:color/white</item>
-
-        <!-- Secondary brand color -->
         <item name="colorSecondary">@color/red_600</item>
         <item name="colorSecondaryVariant">@color/red_700</item>
         <item name="colorOnSecondary">@android:color/white</item>
-
-        <!-- Background & surface colors -->
         <item name="android:windowBackground">@color/gray_50</item>
         <item name="colorSurface">@color/gray_50</item>
         <item name="colorOnSurface">@color/text_primary</item>
-
-        <!-- Error color -->
         <item name="colorError">@color/red_600</item>
         <item name="colorOnError">@android:color/white</item>
-
-        <!-- Text appearances -->
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
-
-        <!-- Shape appearance -->
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.InstaCheck.MediumComponent</item>
         <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.InstaCheck.SmallComponent</item>
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.InstaCheck.LargeComponent</item>
     </style>
 
-    <!-- Card / button rounded corners -->
     <style name="ShapeAppearance.InstaCheck.MediumComponent" parent="ShapeAppearance.MaterialComponents.MediumComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">16dp</item>
