@@ -20,7 +20,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # ✅ Use Gradle 8.7 (compatible with AGP 8.2.2)
+      # ✅ Use Gradle 8.7
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -34,9 +34,19 @@ jobs:
           arch: arm64-v8a
           components: build-tools;34.0.0
 
-      - name: Build APK
-        run: gradle assembleRelease
+      # ✅ Generate debug keystore for signing
+      - name: Generate debug keystore
+        run: |
+          mkdir -p $HOME/.android
+          keytool -genkey -v -keystore $HOME/.android/debug.keystore \
+          -storepass android -alias androiddebugkey -keypass android \
+          -keyalg RSA -keysize 2048 -validity 10000
 
+      # ✅ Build release APK
+      - name: Build APK
+        run: ./gradlew assembleRelease
+
+      # ✅ Upload the APK artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
