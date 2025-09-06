@@ -29,6 +29,12 @@ import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.Random
+import android.graphics.Color
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.content.ContextCompat
 import kotlin.math.min
 
 class MainActivity : AppCompatActivity() {
@@ -65,7 +71,7 @@ class MainActivity : AppCompatActivity() {
     private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             fileUri = it
-            binding.pickFileButton.text = it.lastPathSegment ?: "File selected"
+            binding.pickFileButton.text = it.path?.split("/")?.last() ?: "File selected"
         }
     }
 
@@ -101,17 +107,17 @@ class MainActivity : AppCompatActivity() {
         if (isFile) {
             binding.fileSection.visibility = View.VISIBLE
             binding.textSection.visibility = View.GONE
-            binding.btnFile.backgroundTintList = getColorStateList(R.color.indigo_50)
-            binding.btnFile.setTextColor(getColor(R.color.indigo_700))
-            binding.btnText.backgroundTintList = getColorStateList(R.color.gray_100)
-            binding.btnText.setTextColor(getColor(R.color.gray_700))
+            binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.indigo_50)
+            binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.indigo_700))
+            binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
+            binding.btnText.setTextColor(ContextCompat.getColor(this, R.color.gray_700))
         } else {
             binding.fileSection.visibility = View.GONE
             binding.textSection.visibility = View.VISIBLE
-            binding.btnText.backgroundTintList = getColorStateList(R.color.indigo_50)
-            binding.btnText.setTextColor(getColor(R.color.indigo_700))
-            binding.btnFile.backgroundTintList = getColorStateList(R.color.gray_100)
-            binding.btnFile.setTextColor(getColor(R.color.gray_700))
+            binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.indigo_50)
+            binding.btnText.setTextColor(ContextCompat.getColor(this, R.color.indigo_700))
+            binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
+            binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.gray_700))
         }
     }
 
@@ -201,7 +207,7 @@ class MainActivity : AppCompatActivity() {
             if (job?.isCancelled == true) return "CANCELLED" to "Cancelled: $username"
 
             try {
-                val request = Request.Builder().url(url).headers(Headers.of(headers)).build()
+                val request = Request.Builder().url(url).headers(Headers.Builder().apply { headers.forEach { add(it.key, it.value) } }.build()).build()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 val code = response.code
                 if (code == 404) {
@@ -209,7 +215,7 @@ class MainActivity : AppCompatActivity() {
                     updateResult("AVAILABLE", result, username)
                     return "AVAILABLE" to result
                 } else if (code == 200) {
-                    val body = response.body.string()
+                    val body = response.body?.string()
                     val json = JSONObject(body)
                     val status = if (json.optJSONObject("data")?.optJSONObject("user") != null) "ACTIVE" else "AVAILABLE"
                     val result = "[$status] $username"
@@ -226,7 +232,7 @@ class MainActivity : AppCompatActivity() {
                 updateStatus(statusMsg, username)
             }
             delay(delayMs)
-            delayMs = min(MAX_DELAY, delayMs * 2 + Random().nextLong(1000))
+            delayMs = min(MAX_DELAY, delayMs * 2 + Random().nextInt(1000).toLong())
         }
         val result = "[ERROR] $username - Max retries exceeded"
         updateResult("ERROR", result, username)

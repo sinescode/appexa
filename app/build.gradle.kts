@@ -7,6 +7,10 @@ android {
     namespace = "com.turjaun.instacheck"
     compileSdk = 34
 
+        buildFeatures {
+            viewBinding = true
+        }
+        
     defaultConfig {
         applicationId = "com.turjaun.instacheck"
         minSdk = 24
