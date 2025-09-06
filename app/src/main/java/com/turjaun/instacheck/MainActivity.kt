@@ -22,9 +22,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.apache.poi.hssf.usermodel.HSSFWorkbook
-import org.apache.poi.hssf.util.HSSFColor
 import org.apache.poi.ss.usermodel.*
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -40,6 +39,7 @@ import androidx.core.content.ContextCompat
 import kotlin.math.min
 import java.text.SimpleDateFormat
 import java.util.*
+import java.io.OutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -107,9 +107,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Launcher for saving Excel file (change MIME type to .xls)
-    private val saveExcelLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.ms-excel")) { uri: Uri? ->
-        uri?.let { convertJsonToExcel(it) }
+    // Launcher for saving Excel file
+    private val saveExcelLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri: Uri? ->
+        uri?.let { 
+            scope.launch {
+                convertJsonToExcel(it)
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -144,7 +148,7 @@ class MainActivity : AppCompatActivity() {
         binding.startTextButton.setOnClickListener { startProcessingFromText() }
         binding.convertButton.setOnClickListener { 
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val fileName = "${jsonFileName.substringBeforeLast(".")}_$timestamp.xls"
+            val fileName = "${jsonFileName.substringBeforeLast(".")}_$timestamp.xlsx"
             saveExcelLauncher.launch(fileName)
         }
         binding.cancelButton.setOnClickListener { cancelProcessing() }
@@ -398,67 +402,76 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun convertJsonToExcel(uri: Uri) {
-        binding.conversionProgress.visibility = View.VISIBLE
-        binding.convertButton.isEnabled = false
+    private suspend fun convertJsonToExcel(uri: Uri) {
+        withContext(Dispatchers.Main) {
+            binding.conversionProgress.visibility = View.VISIBLE
+            binding.convertButton.isEnabled = false
+        }
         
         try {
-            contentResolver.openInputStream(jsonFileUri!!)?.use { inputStream ->
-                val jsonString = inputStream.bufferedReader().use { it.readText() }
-                val jsonArray = JSONArray(jsonString)
-                
-                // Create Excel workbook (use HSSF for .xls compatibility on Android)
-                val workbook: Workbook = HSSFWorkbook()
-                val sheet = workbook.createSheet("Accounts")
-                
-                // Create header row with style
-                val headerFont = workbook.createFont()
-                headerFont.bold = true
-                headerFont.color = HSSFColor.HSSFColorPredefined.WHITE.getIndex()
-                
-                val headerStyle = workbook.createCellStyle()
-                headerStyle.setFont(headerFont)
-                headerStyle.fillForegroundColor = HSSFColor.HSSFColorPredefined.BLUE.getIndex()
-                headerStyle.fillPattern = FillPatternType.SOLID_FOREGROUND
-                
-                val headerRow = sheet.createRow(0)
-                val headers = arrayOf("Username", "Password", "Authcode", "Email")
-                headers.forEachIndexed { index, header ->
-                    val cell = headerRow.createCell(index)
-                    cell.setCellValue(header)
-                    cell.cellStyle = headerStyle
-                }
-                
-                // Add data rows
-                for (i in 0 until jsonArray.length()) {
-                    val obj = jsonArray.getJSONObject(i)
-                    val row = sheet.createRow(i + 1)
+            withContext(Dispatchers.IO) {
+                contentResolver.openInputStream(jsonFileUri!!)?.use { inputStream ->
+                    val jsonString = inputStream.bufferedReader().use { it.readText() }
+                    val jsonArray = JSONArray(jsonString)
                     
-                    row.createCell(0).setCellValue(obj.optString("username", ""))
-                    row.createCell(1).setCellValue(obj.optString("password", ""))
-                    row.createCell(2).setCellValue(obj.optString("auth_code", ""))
-                    row.createCell(3).setCellValue(obj.optString("email", ""))
+                    // Create Excel workbook
+                    val workbook = XSSFWorkbook()
+                    val sheet = workbook.createSheet("Accounts")
+                    
+                    // Create header row with style
+                    val headerFont = workbook.createFont()
+                    headerFont.bold = true
+                    headerFont.color = IndexedColors.WHITE.index
+                    
+                    val headerStyle = workbook.createCellStyle()
+                    headerStyle.setFont(headerFont)
+                    headerStyle.fillForegroundColor = IndexedColors.BLUE.index
+                    headerStyle.fillPattern = FillPatternType.SOLID_FOREGROUND
+                    
+                    val headerRow = sheet.createRow(0)
+                    val headers = arrayOf("Username", "Password", "Authcode", "Email")
+                    headers.forEachIndexed { index, header ->
+                        val cell = headerRow.createCell(index)
+                        cell.setCellValue(header)
+                        cell.cellStyle = headerStyle
+                    }
+                    
+                    // Add data rows
+                    for (i in 0 until jsonArray.length()) {
+                        val obj = jsonArray.getJSONObject(i)
+                        val row = sheet.createRow(i + 1)
+                        
+                        row.createCell(0).setCellValue(obj.optString("username", ""))
+                        row.createCell(1).setCellValue(obj.optString("password", ""))
+                        row.createCell(2).setCellValue(obj.optString("auth_code", ""))
+                        row.createCell(3).setCellValue(obj.optString("email", ""))
+                    }
+                    
+                    // Auto-size columns
+                    for (i in 0 until headers.size) {
+                        sheet.autoSizeColumn(i)
+                    }
+                    
+                    // Save the workbook
+                    contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        workbook.write(outputStream)
+                    }
+                    workbook.close()
                 }
-                
-                // Auto-size columns
-                for (i in 0 until headers.size) {
-                    sheet.autoSizeColumn(i)
-                }
-                
-                // Save the workbook
-                contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    workbook.write(outputStream)
-                }
-                workbook.close()  // Close after writing and outside the stream block
-                
+            }
+            
+            withContext(Dispatchers.Main) {
                 binding.conversionProgress.visibility = View.GONE
                 binding.convertButton.isEnabled = true
                 showSuccess("File converted successfully!")
             }
-        } catch (e: Throwable) {  // Broaden to catch Errors like OutOfMemoryError
-            binding.conversionProgress.visibility = View.GONE
-            binding.convertButton.isEnabled = true
-            showError("Conversion failed: ${e.message}")
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                binding.conversionProgress.visibility = View.GONE
+                binding.convertButton.isEnabled = true
+                showError("Conversion failed: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
 
