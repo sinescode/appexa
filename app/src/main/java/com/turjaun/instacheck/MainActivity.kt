@@ -7,36 +7,27 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.tabs.TabLayout
 import com.turjaun.instacheck.databinding.ActivityMainBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.withContext
-import okhttp3.Headers
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import okhttp3.*
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.util.Random
+import java.text.SimpleDateFormat
+import java.util.*
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import kotlin.math.min
-import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Random
 
 class MainActivity : AppCompatActivity() {
 
@@ -73,7 +64,6 @@ class MainActivity : AppCompatActivity() {
     private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             fileUri = it
-            // Extract filename from URI
             val fileName = it.path?.split("/")?.last() ?: "selected_file"
             originalFileName = fileName.substringBeforeLast(".")
             binding.pickFileButton.text = fileName
@@ -103,8 +93,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        binding.btnFile.setOnClickListener { switchTab(true) }
-        binding.btnText.setOnClickListener { switchTab(false) }
+        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                switchTab(tab?.position == 0)
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
 
         binding.pickFileButton.setOnClickListener {
             pickFileLauncher.launch(arrayOf("*/*"))
@@ -120,17 +115,11 @@ class MainActivity : AppCompatActivity() {
         if (isFile) {
             binding.fileSection.visibility = View.VISIBLE
             binding.textSection.visibility = View.GONE
-            binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
-            binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
-            binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
-            binding.btnText.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
+            binding.tabLayout.getTabAt(0)?.select()
         } else {
             binding.fileSection.visibility = View.GONE
             binding.textSection.visibility = View.VISIBLE
-            binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
-            binding.btnText.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
-            binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
-            binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
+            binding.tabLayout.getTabAt(1)?.select()
         }
     }
 
@@ -293,7 +282,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateProgress() {
         val percentage = if (usernames.size > 0) (processedCount * 100 / usernames.size) else 0
         binding.progressBar.progress = percentage
-        binding.progressText.text = "Progress: $processedCount/${usernames.size} ($percentage%)"
+        binding.progressText.text = "Processed: $processedCount/${usernames.size} ($percentage%)"
     }
 
     private fun updateStats() {
@@ -317,7 +306,7 @@ class MainActivity : AppCompatActivity() {
     private fun cancelProcessing() {
         job?.cancel()
         scope.launch {
-            updateStatus("️ Processing cancelled by user", "")
+            updateStatus("Processing cancelled by user", "")
         }
         binding.cancelButton.visibility = View.GONE
         binding.downloadButton.visibility = if (activeAccounts.isNotEmpty()) View.VISIBLE else View.GONE
@@ -368,6 +357,7 @@ class ResultsAdapter : androidx.recyclerview.widget.RecyclerView.Adapter<Results
     class ViewHolder(view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.icon)
         val message: TextView = view.findViewById(R.id.message)
+        val statusIndicator: View = view.findViewById(R.id.status_indicator)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -379,33 +369,30 @@ class ResultsAdapter : androidx.recyclerview.widget.RecyclerView.Adapter<Results
         val item = items[position]
         holder.message.text = item.message
         
-        // Get the status indicator view
-        val statusIndicator = holder.itemView.findViewById<View>(R.id.status_indicator)
-        
         when (item.status) {
             "ACTIVE" -> {
                 holder.icon.setImageResource(android.R.drawable.presence_busy)
                 holder.itemView.setBackgroundColor(Color.parseColor("#FECACA"))
                 holder.message.setTextColor(Color.parseColor("#DC2626"))
-                statusIndicator?.setBackgroundColor(Color.parseColor("#DC2626"))
+                holder.statusIndicator.setBackgroundColor(Color.parseColor("#DC2626"))
             }
             "AVAILABLE" -> {
                 holder.icon.setImageResource(android.R.drawable.presence_online)
                 holder.itemView.setBackgroundColor(Color.parseColor("#D1FAE5"))
                 holder.message.setTextColor(Color.parseColor("#059669"))
-                statusIndicator?.setBackgroundColor(Color.parseColor("#059669"))
+                holder.statusIndicator.setBackgroundColor(Color.parseColor("#059669"))
             }
             "ERROR" -> {
                 holder.icon.setImageResource(android.R.drawable.ic_dialog_alert)
                 holder.itemView.setBackgroundColor(Color.parseColor("#FEF3C7"))
                 holder.message.setTextColor(Color.parseColor("#D97706"))
-                statusIndicator?.setBackgroundColor(Color.parseColor("#D97706"))
+                holder.statusIndicator.setBackgroundColor(Color.parseColor("#D97706"))
             }
             else -> {
                 holder.icon.setImageResource(android.R.drawable.ic_dialog_info)
                 holder.itemView.setBackgroundColor(Color.parseColor("#F9FAFB"))
                 holder.message.setTextColor(Color.parseColor("#6B7280"))
-                statusIndicator?.setBackgroundColor(Color.parseColor("#6B7280"))
+                holder.statusIndicator.setBackgroundColor(Color.parseColor("#6B7280"))
             }
         }
     }
