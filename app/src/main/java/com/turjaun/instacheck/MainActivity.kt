@@ -23,13 +23,10 @@ import kotlinx.coroutines.withContext
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.apache.poi.ss.usermodel.*
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
-import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
 import java.util.Random
 import android.graphics.Color
@@ -41,6 +38,10 @@ import androidx.core.content.ContextCompat
 import kotlin.math.min
 import java.text.SimpleDateFormat
 import java.util.*
+import org.apache.poi.ss.usermodel.*
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -111,6 +112,12 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupClickListeners()
         switchTab(0) // Default to file tab
+        
+        // Set up uncaught exception handler
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            Log.e("UncaughtException", "Uncaught exception in thread ${thread.name}", throwable)
+            throwable.printStackTrace()
+        }
     }
     private fun setupRecyclerView() {
         binding.resultsRecycler.layoutManager = LinearLayoutManager(this)
@@ -367,15 +374,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    // FIXED convertJsonToExcel function
+    // NEW completely rewritten conversion logic
     private fun convertJsonToExcel(uri: Uri) {
         binding.conversionProgress.visibility = View.VISIBLE
         binding.convertButton.isEnabled = false
         
         scope.launch(Dispatchers.IO) {
             try {
+                Log.d("ExcelConversion", "Starting conversion process")
+                
                 // Check if JSON file URI is valid
                 if (jsonFileUri == null) {
+                    Log.e("ExcelConversion", "No JSON file selected")
                     withContext(Dispatchers.Main) {
                         showError("No JSON file selected")
                         binding.conversionProgress.visibility = View.GONE
@@ -385,8 +395,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 
                 // Read JSON file
+                Log.d("ExcelConversion", "Reading JSON file")
                 val inputStream = contentResolver.openInputStream(jsonFileUri!!)
                 if (inputStream == null) {
+                    Log.e("ExcelConversion", "Failed to open JSON file")
                     withContext(Dispatchers.Main) {
                         showError("Failed to open JSON file")
                         binding.conversionProgress.visibility = View.GONE
@@ -398,8 +410,11 @@ class MainActivity : AppCompatActivity() {
                 val jsonString = inputStream.bufferedReader().use { it.readText() }
                 val jsonArray = JSONArray(jsonString)
                 
+                Log.d("ExcelConversion", "JSON file loaded with ${jsonArray.length()} records")
+                
                 // Check if JSON array is empty
                 if (jsonArray.length() == 0) {
+                    Log.e("ExcelConversion", "JSON file is empty")
                     withContext(Dispatchers.Main) {
                         showError("JSON file is empty")
                         binding.conversionProgress.visibility = View.GONE
@@ -408,11 +423,18 @@ class MainActivity : AppCompatActivity() {
                     return@launch
                 }
                 
-                // Create Excel workbook
+                // Create a temporary file
+                Log.d("ExcelConversion", "Creating temporary file")
+                val tempFile = File.createTempFile("temp_excel", ".xlsx", cacheDir)
+                tempFile.deleteOnExit()
+                
+                // Create Excel workbook using the temporary file
+                Log.d("ExcelConversion", "Creating Excel workbook")
                 val workbook = XSSFWorkbook()
                 val sheet = workbook.createSheet("Accounts")
                 
                 // Create header row
+                Log.d("ExcelConversion", "Creating header row")
                 val headerRow = sheet.createRow(0)
                 val headers = arrayOf("Username", "Password", "Authcode", "Email")
                 headers.forEachIndexed { index, header ->
@@ -420,6 +442,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 
                 // Add data rows
+                Log.d("ExcelConversion", "Adding data rows")
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
                     val row = sheet.createRow(i + 1)
@@ -431,21 +454,40 @@ class MainActivity : AppCompatActivity() {
                 }
                 
                 // Auto-size columns
+                Log.d("ExcelConversion", "Auto-sizing columns")
                 for (i in 0 until headers.size) {
                     sheet.autoSizeColumn(i)
                 }
                 
-                // Write to a byte array first
-                val outputStream = ByteArrayOutputStream()
-                workbook.write(outputStream)
+                // Write to temporary file first
+                Log.d("ExcelConversion", "Writing to temporary file")
+                FileOutputStream(tempFile).use { fileOutputStream ->
+                    workbook.write(fileOutputStream)
+                    fileOutputStream.flush()
+                }
                 workbook.close()
                 
-                // Now write to the actual file
+                // Verify the file was created successfully
+                if (!tempFile.exists() || tempFile.length() == 0L) {
+                    Log.e("ExcelConversion", "Temporary file creation failed")
+                    throw Exception("Failed to create Excel file")
+                }
+                
+                Log.d("ExcelConversion", "Temporary file created successfully with size: ${tempFile.length()} bytes")
+                
+                // Now copy the temporary file to the destination
+                Log.d("ExcelConversion", "Copying to destination")
                 contentResolver.openOutputStream(uri)?.use { fileOutputStream ->
-                    fileOutputStream.write(outputStream.toByteArray())
+                    tempFile.inputStream().use { input ->
+                        input.copyTo(fileOutputStream)
+                    }
                     fileOutputStream.flush()
                 } ?: throw Exception("Failed to open output file")
                 
+                // Clean up
+                tempFile.delete()
+                
+                Log.d("ExcelConversion", "Conversion completed successfully")
                 withContext(Dispatchers.Main) {
                     binding.conversionProgress.visibility = View.GONE
                     binding.convertButton.isEnabled = true
@@ -453,7 +495,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 
             } catch (e: Exception) {
-                Log.e("ExcelConversion", "Error converting file", e)
+                Log.e("ExcelConversion", "Error during conversion", e)
                 withContext(Dispatchers.Main) {
                     binding.conversionProgress.visibility = View.GONE
                     binding.convertButton.isEnabled = true
