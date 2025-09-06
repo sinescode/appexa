@@ -1,515 +1,458 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/gray_50"
-    android:padding="16dp">
+    android:background="#F9FAFB">
 
-    <!-- Main Container -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/main_container"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_margin="8dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <!-- Header -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="16dp">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
 
-            <!-- Header -->
             <TextView
-                android:id="@+id/header_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Instagram Username Checker"
-                android:textSize="20sp"
+                android:textSize="24sp"
+                android:textColor="#4F46E5"
                 android:textStyle="bold"
-                android:textColor="@color/indigo_600"
-                android:drawableStart="@drawable/ic_instagram"
+                app:drawableStartCompat="@drawable/ic_instagram"
                 android:drawablePadding="8dp"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                android:layout_marginBottom="4dp" />
 
             <TextView
-                android:id="@+id/header_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Check many usernames quickly — optimized for mobile"
                 android:textSize="12sp"
-                android:textColor="@color/gray_500"
-                android:layout_marginTop="4dp"
-                app:layout_constraintTop_toBottomOf="@id/header_title"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                android:textColor="#6B7280" />
+        </LinearLayout>
 
-            <!-- Tabs -->
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tab_layout"
+        <!-- Tabs -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/tab_background"
+            android:padding="4dp"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/btnFile"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Upload File"
+                android:backgroundTint="#EEF2FF"
+                android:textColor="#4F46E5"
+                android:textStyle="bold"
+                android:drawableStart="@drawable/ic_file"
+                android:drawablePadding="4dp"
+                style="@style/Widget.AppCompat.Button.Borderless" />
+
+            <Button
+                android:id="@+id/btnText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Enter Text"
+                android:backgroundTint="#F3F4F6"
+                android:textColor="#6B7280"
+                android:drawableStart="@drawable/ic_keyboard"
+                android:drawablePadding="4dp"
+                style="@style/Widget.AppCompat.Button.Borderless" />
+        </LinearLayout>
+
+        <!-- File Section -->
+        <LinearLayout
+            android:id="@+id/fileSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/section_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Upload a file"
+                android:textSize="18sp"
+                android:textColor="#4F46E5"
+                android:textStyle="bold"
+                app:drawableStartCompat="@drawable/ic_file_import"
+                android:drawablePadding="8dp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="JSON or TXT — one username per line (or an array in JSON)."
+                android:textSize="12sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/pickFileButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Select file..."
+                android:backgroundTint="#EEF2FF"
+                android:textColor="#4F46E5"
+                android:drawableStart="@drawable/ic_upload"
+                android:drawablePadding="4dp"
+                style="@style/Widget.AppCompat.Button.Borderless" />
+
+            <Button
+                android:id="@+id/startFileButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Start Checking"
+                android:backgroundTint="#DC2626"
+                android:textColor="#FFFFFF"
                 android:layout_marginTop="16dp"
-                app:tabBackground="@drawable/tab_background_selector"
-                app:tabIndicatorHeight="0dp"
-                app:tabMode="fixed"
-                app:tabGravity="fill"
-                app:tabTextColor="@color/gray_600"
-                app:tabSelectedTextColor="@color/indigo_700"
-                app:layout_constraintTop_toBottomOf="@id/header_subtitle"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                android:drawableStart="@drawable/ic_search"
+                android:drawablePadding="4dp" />
+        </LinearLayout>
 
-                <com.google.android.material.tabs.TabItem
-                    android:id="@+id/btn_file"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Upload File"
-                    android:icon="@drawable/ic_file" />
+        <!-- Text Section -->
+        <LinearLayout
+            android:id="@+id/textSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/section_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
 
-                <com.google.android.material.tabs.TabItem
-                    android:id="@+id/btn_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Enter Text"
-                    android:icon="@drawable/ic_keyboard" />
-            </com.google.android.material.tabs.TabLayout>
-
-            <!-- File Section -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/file_section"
-                android:layout_width="0dp"
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/rounded_border"
+                android:text="Enter Usernames"
+                android:textSize="18sp"
+                android:textColor="#4F46E5"
+                android:textStyle="bold"
+                app:drawableStartCompat="@drawable/ic_keyboard"
+                android:drawablePadding="8dp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="One username per line."
+                android:textSize="12sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="16dp" />
+
+            <EditText
+                android:id="@+id/usernameInput"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:background="@drawable/edittext_background"
                 android:padding="16dp"
-                android:layout_marginTop="16dp"
-                app:layout_constraintTop_toBottomOf="@id/tab_layout"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                android:hint="user1\nuser2\n..."
+                android:gravity="top" />
 
-                <TextView
-                    android:id="@+id/file_section_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Upload a file"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:drawableStart="@drawable/ic_file_import"
-                    android:drawablePadding="8dp"
-                    android:textColor="@android:color/black"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
-
-                <TextView
-                    android:id="@+id/file_section_subtitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="JSON or TXT — one username per line (or an array in JSON)."
-                    android:textSize="12sp"
-                    android:textColor="@color/gray_500"
-                    android:layout_marginTop="4dp"
-                    app:layout_constraintTop_toBottomOf="@id/file_section_title"
-                    app:layout_constraintStart_toStartOf="parent" />
-
-                <Button
-                    android:id="@+id/pick_file_button"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="Select File"
-                    android:textSize="14sp"
-                    android:backgroundTint="@color/indigo_50"
-                    android:textColor="@color/indigo_700"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    app:layout_constraintTop_toBottomOf="@id/file_section_subtitle"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    android:layout_marginTop="12dp" />
-
-                <Button
-                    android:id="@+id/start_file_button"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="Start Checking"
-                    android:textSize="14sp"
-                    android:backgroundTint="@color/red_600"
-                    android:textColor="@android:color/white"
-                    android:drawableStart="@drawable/ic_search"
-                    android:drawablePadding="8dp"
-                    style="@style/Widget.MaterialComponents.Button"
-                    app:layout_constraintTop_toBottomOf="@id/pick_file_button"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    android:layout_marginTop="16dp" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- Text Section -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/text_section"
-                android:layout_width="0dp"
+            <Button
+                android:id="@+id/startTextButton"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/rounded_border"
-                android:padding="16dp"
+                android:text="Start Checking"
+                android:backgroundTint="#DC2626"
+                android:textColor="#FFFFFF"
                 android:layout_marginTop="16dp"
-                android:visibility="gone"
-                app:layout_constraintTop_toBottomOf="@id/tab_layout"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                android:drawableStart="@drawable/ic_search"
+                android:drawablePadding="4dp" />
+        </LinearLayout>
 
-                <TextView
-                    android:id="@+id/text_section_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Enter Usernames"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:drawableStart="@drawable/ic_keyboard"
-                    android:drawablePadding="8dp"
-                    android:textColor="@android:color/black"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
+        <!-- Progress Section -->
+        <LinearLayout
+            android:id="@+id/progressSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/section_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
 
-                <TextView
-                    android:id="@+id/text_section_subtitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="One username per line."
-                    android:textSize="12sp"
-                    android:textColor="@color/gray_500"
-                    android:layout_marginTop="4dp"
-                    app:layout_constraintTop_toBottomOf="@id/text_section_title"
-                    app:layout_constraintStart_toStartOf="parent" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Progress"
+                android:textSize="18sp"
+                android:textColor="#4F46E5"
+                android:textStyle="bold"
+                app:drawableStartCompat="@drawable/ic_chart"
+                android:drawablePadding="8dp"
+                android:layout_marginBottom="16dp" />
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/username_input_layout"
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:progress="0"
+                android:progressTint="#16A34A"
+                android:backgroundTint="#E5E7EB" />
+
+            <TextView
+                android:id="@+id/progressText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Processed: 0/0 (0%)"
+                android:textSize="12sp"
+                android:textColor="#6B7280"
+                android:layout_marginTop="8dp" />
+
+            <!-- Stats Grid -->
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="4"
+                android:rowCount="1"
+                android:layout_marginTop="16dp">
+
+                <!-- Active Count -->
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    app:layout_constraintTop_toBottomOf="@id/text_section_subtitle"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/stat_background_active"
+                    android:padding="12dp"
+                    android:layout_margin="4dp">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/username_input"
+                    <TextView
+                        android:id="@+id/activeCount"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="user1\nuser2\n..."
-                        android:inputType="textMultiLine"
-                        android:minLines="6"
-                        android:maxLines="6"
-                        android:scrollbars="vertical"
-                        android:textSize="14sp" />
-                </com.google.android.material.textfield.TextInputLayout>
+                        android:text="0"
+                        android:textSize="20sp"
+                        android:textColor="#DC2626"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:src="@drawable/ic_user_check"
+                            android:tint="#6B7280"
+                            android:layout_marginEnd="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Active"
+                            android:textSize="10sp"
+                            android:textColor="#6B7280" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Available Count -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/stat_background_available"
+                    android:padding="12dp"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:id="@+id/availableCount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="20sp"
+                        android:textColor="#059669"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:src="@drawable/ic_user_plus"
+                            android:tint="#6B7280"
+                            android:layout_marginEnd="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Available"
+                            android:textSize="10sp"
+                            android:textColor="#6B7280" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Error Count -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/stat_background_error"
+                    android:padding="12dp"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:id="@+id/errorCount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="20sp"
+                        android:textColor="#D97706"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:src="@drawable/ic_warning"
+                            android:tint="#6B7280"
+                            android:layout_marginEnd="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Error"
+                            android:textSize="10sp"
+                            android:textColor="#6B7280" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Total Count -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/stat_background_total"
+                    android:padding="12dp"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:id="@+id/totalCount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="20sp"
+                        android:textColor="#000000"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:src="@drawable/ic_list"
+                            android:tint="#6B7280"
+                            android:layout_marginEnd="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Total"
+                            android:textSize="10sp"
+                            android:textColor="#6B7280" />
+                    </LinearLayout>
+                </LinearLayout>
+            </GridLayout>
+
+            <!-- Action Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp">
 
                 <Button
-                    android:id="@+id/start_text_button"
+                    android:id="@+id/cancelButton"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Start Checking"
-                    android:textSize="14sp"
-                    android:backgroundTint="@color/red_600"
-                    android:textColor="@android:color/white"
-                    android:drawableStart="@drawable/ic_search"
-                    android:drawablePadding="8dp"
-                    style="@style/Widget.MaterialComponents.Button"
-                    app:layout_constraintTop_toBottomOf="@id/username_input_layout"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    android:layout_marginTop="16dp" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                    android:layout_weight="1"
+                    android:text="Cancel"
+                    android:backgroundTint="#DC2626"
+                    android:textColor="#FFFFFF"
+                    android:drawableStart="@drawable/ic_cancel"
+                    android:drawablePadding="4dp"
+                    android:layout_marginEnd="8dp" />
 
-            <!-- Progress Section -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/progress_section"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:visibility="gone"
-                app:layout_constraintTop_toBottomOf="@id/file_section"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
-
-                <TextView
-                    android:id="@+id/progress_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Progress"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:drawableStart="@drawable/ic_chart"
-                    android:drawablePadding="8dp"
-                    android:textColor="@android:color/black"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
-
-                <ProgressBar
-                    android:id="@+id/progress_bar"
-                    android:layout_width="0dp"
-                    android:layout_height="16dp"
-                    android:layout_marginTop="12dp"
-                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                    android:progressBackgroundTint="@color/gray_200"
-                    android:progressTint="@color/green_600"
-                    app:layout_constraintTop_toBottomOf="@id/progress_title"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
-
-                <TextView
-                    android:id="@+id/progress_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Processed: 0/0 (0%)"
-                    android:textSize="12sp"
-                    android:textColor="@color/gray_600"
-                    android:layout_marginTop="8dp"
-                    app:layout_constraintTop_toBottomOf="@id/progress_bar"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
-
-                <!-- Stats Cards -->
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/stats_container"
+                <Button
+                    android:id="@+id/downloadButton"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    app:layout_constraintTop_toBottomOf="@id/progress_text"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent">
+                    android:layout_weight="1"
+                    android:text="Download"
+                    android:backgroundTint="#059669"
+                    android:textColor="#FFFFFF"
+                    android:drawableStart="@drawable/ic_download"
+                    android:drawablePadding="4dp"
+                    android:layout_marginStart="8dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
 
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/active_card"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        app:cardBackgroundColor="@color/red_50"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:layout_constraintWidth_percent="0.23"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintStart_toStartOf="parent">
+        <!-- Results Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/section_background"
+            android:padding="16dp">
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="12dp"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/active_count"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0"
-                                android:textSize="18sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/red_600" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Active"
-                                android:textSize="10sp"
-                                android:textColor="@color/gray_500"
-                                android:drawableStart="@drawable/ic_user_check"
-                                android:drawablePadding="4dp" />
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/available_card"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        app:cardBackgroundColor="@color/green_50"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:layout_constraintWidth_percent="0.23"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/active_card"
-                        android:layout_marginStart="8dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="12dp"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/available_count"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0"
-                                android:textSize="18sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/green_700" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Available"
-                                android:textSize="10sp"
-                                android:textColor="@color/gray_500"
-                                android:drawableStart="@drawable/ic_user_plus"
-                                android:drawablePadding="4dp" />
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/error_card"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        app:cardBackgroundColor="@color/yellow_50"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:layout_constraintWidth_percent="0.23"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/available_card"
-                        android:layout_marginStart="8dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="12dp"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/error_count"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0"
-                                android:textSize="18sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/yellow_700" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Error"
-                                android:textSize="10sp"
-                                android:textColor="@color/gray_500"
-                                android:drawableStart="@drawable/ic_warning"
-                                android:drawablePadding="4dp" />
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/total_card"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        app:cardBackgroundColor="@color/gray_50"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:layout_constraintWidth_percent="0.23"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/error_card"
-                        android:layout_marginStart="8dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="12dp"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/total_count"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0"
-                                android:textSize="18sp"
-                                android:textStyle="bold"
-                                android:textColor="@android:color/black" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Total"
-                                android:textSize="10sp"
-                                android:textColor="@color/gray_500"
-                                android:drawableStart="@drawable/ic_list"
-                                android:drawablePadding="4dp" />
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-                <!-- Action Buttons -->
-                <LinearLayout
-                    android:id="@+id/action_buttons"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="16dp"
-                    app:layout_constraintTop_toBottomOf="@id/stats_container"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent">
-
-                    <Button
-                        android:id="@+id/cancel_button"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Cancel"
-                        android:textSize="14sp"
-                        android:backgroundTint="@color/red_600"
-                        android:textColor="@android:color/white"
-                        android:drawableStart="@drawable/ic_cancel"
-                        android:drawablePadding="8dp"
-                        style="@style/Widget.MaterialComponents.Button"
-                        android:layout_marginEnd="8dp"
-                        android:visibility="gone" />
-
-                    <Button
-                        android:id="@+id/download_button"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Download"
-                        android:textSize="14sp"
-                        android:backgroundTint="@color/green_600"
-                        android:textColor="@android:color/white"
-                        android:drawableStart="@drawable/ic_download"
-                        android:drawablePadding="8dp"
-                        style="@style/Widget.MaterialComponents.Button"
-                        android:visibility="gone" />
-                </LinearLayout>
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- Results Section -->
             <TextView
-                android:id="@+id/results_title"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Results"
-                android:textSize="14sp"
+                android:textSize="18sp"
+                android:textColor="#4F46E5"
                 android:textStyle="bold"
-                android:drawableStart="@drawable/ic_list_check"
+                app:drawableStartCompat="@drawable/ic_list_check"
                 android:drawablePadding="8dp"
-                android:textColor="@android:color/black"
-                android:layout_marginTop="16dp"
-                app:layout_constraintTop_toBottomOf="@id/progress_section"
-                app:layout_constraintStart_toStartOf="parent" />
+                android:layout_marginBottom="16dp" />
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/results_recycler"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_marginTop="12dp"
-                app:layout_constraintTop_toBottomOf="@id/results_title"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                tools:listitem="@layout/result_item" />
+                android:id="@+id/resultsRecycler"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:background="#FFFFFF" />
+        </LinearLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.cardview.widget.CardView>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+</ScrollView>
