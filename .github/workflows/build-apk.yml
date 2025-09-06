@@ -68,8 +68,7 @@ jobs:
         import android.view.ViewGroup\
         import android.widget.ImageView\
         import android.widget.TextView\
-        import androidx.core.content.ContextCompat\
-        import kotlinx.coroutines.sync.withPermit' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
+        import androidx.core.content.ContextCompat' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
         
         sed -i 's/getColorStateList(/ContextCompat.getColorStateList(this, /g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
         sed -i 's/getColor(/ContextCompat.getColor(this, /g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
@@ -82,13 +81,18 @@ jobs:
         
         sed -i 's/it.lastPathSegment/it.path?.split("\/")?.last()/' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
 
+    - name: Clear Gradle Cache
+      run: |
+        ./gradlew clean
+        rm -rf ~/.gradle/caches/
+
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: '8.9'
 
     - name: Build Debug APK
-      run: gradle assembleDebug
+      run: gradle assembleDebug --stacktrace --info
 
     - name: Rename APK
       run: mv app/build/outputs/apk/debug/app-debug.apk Instacheck.apk
