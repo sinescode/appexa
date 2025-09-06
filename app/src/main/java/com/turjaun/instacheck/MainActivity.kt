@@ -38,10 +38,12 @@ import androidx.core.content.ContextCompat
 import kotlin.math.min
 import java.text.SimpleDateFormat
 import java.util.*
-import org.apache.poi.ss.usermodel.*
+import org.apache.poi.ss.usermodel.BorderStyle
+import org.apache.poi.ss.usermodel.FillPatternType
+import org.apache.poi.ss.usermodel.HorizontalAlignment
+import org.apache.poi.ss.usermodel.IndexedColors
+import org.apache.poi.ss.usermodel.VerticalAlignment
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import java.io.File
-import java.io.FileOutputStream
 import java.io.ByteArrayOutputStream
 
 class MainActivity : AppCompatActivity() {
@@ -59,9 +61,11 @@ class MainActivity : AppCompatActivity() {
     private var errorCount = 0
     private var cancelledCount = 0
     private var originalFileName = ""
+    
     // Converter variables
     private var jsonFileUri: Uri? = null
     private var jsonFileName: String = ""
+    
     private val headers = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36",
         "x-ig-app-id" to "936619743392459",
@@ -71,6 +75,7 @@ class MainActivity : AppCompatActivity() {
         "Origin" to "https://www.instagram.com",
         "Sec-Fetch-Site" to "same-origin"
     )
+    
     private val MAX_RETRIES = 10
     private val INITIAL_DELAY = 1L * 1000
     private val MAX_DELAY = 60L * 1000
@@ -79,7 +84,6 @@ class MainActivity : AppCompatActivity() {
     private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             fileUri = it
-            // Extract filename from URI
             val fileName = it.path?.split("/")?.last() ?: "selected_file"
             originalFileName = fileName.substringBeforeLast(".")
             binding.pickFileButton.text = fileName
@@ -93,7 +97,6 @@ class MainActivity : AppCompatActivity() {
         uri?.let { saveJsonToFile(it) }
     }
     
-    // Launcher for JSON file selection
     private val pickJsonFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             jsonFileUri = it
@@ -106,7 +109,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    // Launcher for saving Excel file
     private val saveExcelLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri: Uri? ->
         uri?.let { convertJsonToExcel(it) }
     }
@@ -117,9 +119,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setupRecyclerView()
         setupClickListeners()
-        switchTab(0) // Default to file tab
+        switchTab(0)
         
-        // Set up uncaught exception handler
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             Log.e("UncaughtException", "Uncaught exception in thread ${thread.name}", throwable)
             throwable.printStackTrace()
@@ -156,12 +157,10 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun switchTab(tabIndex: Int) {
-        // Hide all sections first
         binding.fileSection.visibility = View.GONE
         binding.textSection.visibility = View.GONE
         binding.converterSection.visibility = View.GONE
         
-        // Reset all tab styles
         binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
         binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
         binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
@@ -170,17 +169,17 @@ class MainActivity : AppCompatActivity() {
         binding.btnConverter.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
         
         when (tabIndex) {
-            0 -> { // File tab
+            0 -> {
                 binding.fileSection.visibility = View.VISIBLE
                 binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
                 binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
             }
-            1 -> { // Text tab
+            1 -> {
                 binding.textSection.visibility = View.VISIBLE
                 binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
                 binding.btnText.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
             }
-            2 -> { // Converter tab
+            2 -> {
                 binding.converterSection.visibility = View.VISIBLE
                 binding.btnConverter.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
                 binding.btnConverter.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
@@ -222,7 +221,7 @@ class MainActivity : AppCompatActivity() {
             if (type == "txt") {
                 usernames = reader.readLines().map { it.trim() }.filter { it.isNotEmpty() }
                 usernames.forEach { accountData[it] = JSONObject().put("username", it) }
-            } else { // json
+            } else {
                 val jsonStr = reader.readText()
                 try {
                     val array = JSONArray(jsonStr)
@@ -298,7 +297,7 @@ class MainActivity : AppCompatActivity() {
                     return "AVAILABLE" to result
                 } else if (code == 200) {
                     val body = response.body?.string()
-                    val json = JSONObject(body)
+                    val json = JSONObject(body ?: "")
                     val status = if (json.optJSONObject("data")?.optJSONObject("user") != null) "ACTIVE" else "AVAILABLE"
                     val result = if (status == "ACTIVE") " $username - Active" else " $username - Available"
                     updateResult(status, result, username)
@@ -374,7 +373,7 @@ class MainActivity : AppCompatActivity() {
     private fun cancelProcessing() {
         job?.cancel()
         scope.launch {
-            updateStatus("️ Processing cancelled by user", "")
+            updateStatus("Processing cancelled by user", "")
         }
         binding.cancelButton.visibility = View.GONE
         binding.downloadButton.visibility = if (activeAccounts.isNotEmpty()) View.VISIBLE else View.GONE
@@ -404,7 +403,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    // FIXED Excel conversion logic
     private fun convertJsonToExcel(uri: Uri) {
         binding.conversionProgress.visibility = View.VISIBLE
         binding.convertButton.isEnabled = false
@@ -414,7 +412,6 @@ class MainActivity : AppCompatActivity() {
             try {
                 Log.d("ExcelConversion", "Starting conversion process")
                 
-                // Check if JSON file URI is valid
                 if (jsonFileUri == null) {
                     Log.e("ExcelConversion", "No JSON file selected")
                     withContext(Dispatchers.Main) {
@@ -425,7 +422,6 @@ class MainActivity : AppCompatActivity() {
                     return@launch
                 }
                 
-                // Read JSON file with proper error handling
                 Log.d("ExcelConversion", "Reading JSON file")
                 val jsonString = try {
                     contentResolver.openInputStream(jsonFileUri!!)?.use { inputStream ->
@@ -441,7 +437,6 @@ class MainActivity : AppCompatActivity() {
                     return@launch
                 }
                 
-                // Parse JSON with validation
                 val jsonArray = try {
                     JSONArray(jsonString)
                 } catch (e: Exception) {
@@ -456,7 +451,6 @@ class MainActivity : AppCompatActivity() {
                 
                 Log.d("ExcelConversion", "JSON file loaded with ${jsonArray.length()} records")
                 
-                // Check if JSON array is empty
                 if (jsonArray.length() == 0) {
                     Log.e("ExcelConversion", "JSON file is empty")
                     withContext(Dispatchers.Main) {
@@ -467,38 +461,33 @@ class MainActivity : AppCompatActivity() {
                     return@launch
                 }
                 
-                // Create Excel workbook
                 Log.d("ExcelConversion", "Creating Excel workbook")
                 workbook = XSSFWorkbook()
                 val sheet = workbook.createSheet("Accounts")
                 
                 // Create header style
-                val headerStyle = workbook.createCellStyle().apply {
-                    val headerFont = workbook.createFont().apply {
-                        bold = true
-                        fontHeightInPoints = 12
-                    }
-                    setFont(headerFont)
-                    fillForegroundColor = IndexedColors.LIGHT_BLUE.index
-                    fillPattern = FillPatternType.SOLID_FOREGROUND
-                    alignment = HorizontalAlignment.CENTER
-                    setBorderBottom(BorderStyle.THIN)
-                    setBorderTop(BorderStyle.THIN)
-                    setBorderLeft(BorderStyle.THIN)
-                    setBorderRight(BorderStyle.THIN)
-                }
+                val headerStyle = workbook.createCellStyle()
+                val headerFont = workbook.createFont()
+                headerFont.bold = true
+                headerFont.fontHeightInPoints = 12
+                headerStyle.setFont(headerFont)
+                headerStyle.fillForegroundColor = IndexedColors.LIGHT_BLUE.index
+                headerStyle.fillPattern = FillPatternType.SOLID_FOREGROUND
+                headerStyle.alignment = HorizontalAlignment.CENTER
+                headerStyle.borderBottom = BorderStyle.THIN
+                headerStyle.borderTop = BorderStyle.THIN
+                headerStyle.borderLeft = BorderStyle.THIN
+                headerStyle.borderRight = BorderStyle.THIN
                 
                 // Create data style
-                val dataStyle = workbook.createCellStyle().apply {
-                    setBorderBottom(BorderStyle.THIN)
-                    setBorderTop(BorderStyle.THIN)
-                    setBorderLeft(BorderStyle.THIN)
-                    setBorderRight(BorderStyle.THIN)
-                    alignment = HorizontalAlignment.LEFT
-                    verticalAlignment = VerticalAlignment.CENTER
-                }
+                val dataStyle = workbook.createCellStyle()
+                dataStyle.borderBottom = BorderStyle.THIN
+                dataStyle.borderTop = BorderStyle.THIN
+                dataStyle.borderLeft = BorderStyle.THIN
+                dataStyle.borderRight = BorderStyle.THIN
+                dataStyle.alignment = HorizontalAlignment.LEFT
+                dataStyle.verticalAlignment = VerticalAlignment.CENTER
                 
-                // Create header row
                 Log.d("ExcelConversion", "Creating header row")
                 val headerRow = sheet.createRow(0)
                 val headers = arrayOf("Username", "Password", "Auth Code", "Email")
@@ -508,7 +497,6 @@ class MainActivity : AppCompatActivity() {
                     cell.cellStyle = headerStyle
                 }
                 
-                // Add data rows with proper null checking
                 Log.d("ExcelConversion", "Adding data rows")
                 for (i in 0 until jsonArray.length()) {
                     val obj = try {
@@ -520,7 +508,6 @@ class MainActivity : AppCompatActivity() {
                     
                     val row = sheet.createRow(i + 1)
                     
-                    // Create cells with proper data handling
                     val usernameCell = row.createCell(0)
                     usernameCell.setCellValue(obj.optString("username", ""))
                     usernameCell.cellStyle = dataStyle
@@ -538,21 +525,18 @@ class MainActivity : AppCompatActivity() {
                     emailCell.cellStyle = dataStyle
                 }
                 
-                // Auto-size columns for better visibility
                 Log.d("ExcelConversion", "Auto-sizing columns")
                 for (i in 0 until headers.size) {
                     sheet.autoSizeColumn(i)
-                    // Set minimum column width
                     val currentWidth = sheet.getColumnWidth(i)
-                    sheet.setColumnWidth(i, maxOf(currentWidth, 3000)) // Minimum 3000 units
+                    sheet.setColumnWidth(i, maxOf(currentWidth, 3000))
                 }
                 
-                // Write Excel to ByteArrayOutputStream first to ensure data integrity
                 Log.d("ExcelConversion", "Writing Excel data to memory")
                 val byteArrayOutputStream = ByteArrayOutputStream()
                 workbook.write(byteArrayOutputStream)
                 workbook.close()
-                workbook = null // Mark as closed
+                workbook = null
                 
                 val excelBytes = byteArrayOutputStream.toByteArray()
                 byteArrayOutputStream.close()
@@ -563,7 +547,6 @@ class MainActivity : AppCompatActivity() {
                 
                 Log.d("ExcelConversion", "Excel data generated successfully, size: ${excelBytes.size} bytes")
                 
-                // Write the bytes to the destination file
                 Log.d("ExcelConversion", "Writing to destination file")
                 contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(excelBytes)
@@ -585,7 +568,6 @@ class MainActivity : AppCompatActivity() {
                     showError("Conversion failed: ${e.message}")
                 }
             } finally {
-                // Ensure workbook is properly closed
                 try {
                     workbook?.close()
                 } catch (e: Exception) {
@@ -627,7 +609,6 @@ class ResultsAdapter : androidx.recyclerview.widget.RecyclerView.Adapter<Results
         val item = items[position]
         holder.message.text = item.message
         
-        // Get the status indicator view
         val statusIndicator = holder.itemView.findViewById<View>(R.id.status_indicator)
         
         when (item.status) {
