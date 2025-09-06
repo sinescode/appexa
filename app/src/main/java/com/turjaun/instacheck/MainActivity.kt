@@ -1,5 +1,4 @@
 package com.turjaun.instacheck
-
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -39,10 +38,8 @@ import androidx.core.content.ContextCompat
 import kotlin.math.min
 import java.text.SimpleDateFormat
 import java.util.*
-import java.io.OutputStream
 
 class MainActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityMainBinding
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var job: Job? = null
@@ -57,11 +54,9 @@ class MainActivity : AppCompatActivity() {
     private var errorCount = 0
     private var cancelledCount = 0
     private var originalFileName = ""
-
     // Converter variables
     private var jsonFileUri: Uri? = null
     private var jsonFileName: String = ""
-
     private val headers = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36",
         "x-ig-app-id" to "936619743392459",
@@ -71,12 +66,10 @@ class MainActivity : AppCompatActivity() {
         "Origin" to "https://www.instagram.com",
         "Sec-Fetch-Site" to "same-origin"
     )
-
     private val MAX_RETRIES = 10
     private val INITIAL_DELAY = 1L * 1000
     private val MAX_DELAY = 60L * 1000
     private val CONCURRENT_LIMIT = 5
-
     private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             fileUri = it
@@ -89,11 +82,9 @@ class MainActivity : AppCompatActivity() {
             binding.pickFileButton.setTextColor(ContextCompat.getColor(this, R.color.green_700))
         }
     }
-
     private val saveFileLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri: Uri? ->
         uri?.let { saveJsonToFile(it) }
     }
-
     // Launcher for JSON file selection
     private val pickJsonFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
@@ -106,44 +97,32 @@ class MainActivity : AppCompatActivity() {
             binding.pickJsonButton.setTextColor(ContextCompat.getColor(this, R.color.green_700))
         }
     }
-
     // Launcher for saving Excel file
     private val saveExcelLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri: Uri? ->
-        uri?.let { 
-            scope.launch {
-                convertJsonToExcel(it)
-            }
-        }
+        uri?.let { convertJsonToExcel(it) }
     }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         setupRecyclerView()
         setupClickListeners()
         switchTab(0) // Default to file tab
     }
-
     private fun setupRecyclerView() {
         binding.resultsRecycler.layoutManager = LinearLayoutManager(this)
         binding.resultsRecycler.adapter = resultsAdapter
     }
-
     private fun setupClickListeners() {
         binding.btnFile.setOnClickListener { switchTab(0) }
         binding.btnText.setOnClickListener { switchTab(1) }
         binding.btnConverter.setOnClickListener { switchTab(2) }
-
         binding.pickFileButton.setOnClickListener {
             pickFileLauncher.launch(arrayOf("*/*"))
         }
-
         binding.pickJsonButton.setOnClickListener {
             pickJsonFileLauncher.launch(arrayOf("application/json"))
         }
-
         binding.startFileButton.setOnClickListener { startProcessingFromFile() }
         binding.startTextButton.setOnClickListener { startProcessingFromText() }
         binding.convertButton.setOnClickListener { 
@@ -154,7 +133,6 @@ class MainActivity : AppCompatActivity() {
         binding.cancelButton.setOnClickListener { cancelProcessing() }
         binding.downloadButton.setOnClickListener { downloadResults() }
     }
-
     private fun switchTab(tabIndex: Int) {
         // Hide all sections first
         binding.fileSection.visibility = View.GONE
@@ -187,7 +165,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
     private fun startProcessingFromFile() {
         if (fileUri == null) {
             showError("Please select a file first")
@@ -203,7 +180,6 @@ class MainActivity : AppCompatActivity() {
         loadUsernamesFromFile(fileUri!!, extension!!)
         startProcessing()
     }
-
     private fun startProcessingFromText() {
         val text = binding.usernameInput.text.toString().trim()
         if (text.isEmpty()) {
@@ -215,7 +191,6 @@ class MainActivity : AppCompatActivity() {
         originalFileName = "manual_input"
         startProcessing()
     }
-
     private fun loadUsernamesFromFile(uri: Uri, type: String) {
         contentResolver.openInputStream(uri)?.use { input ->
             val reader = BufferedReader(InputStreamReader(input))
@@ -235,7 +210,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
     private fun startProcessing() {
         if (usernames.isEmpty()) {
             showError("No valid usernames found")
@@ -250,7 +224,6 @@ class MainActivity : AppCompatActivity() {
         binding.cancelButton.visibility = View.VISIBLE
         updateStats()
         resultsAdapter.clear()
-
         job = scope.launch {
             val semaphore = Semaphore(CONCURRENT_LIMIT)
             val client = OkHttpClient()
@@ -272,15 +245,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
     private suspend fun checkUsername(client: OkHttpClient, username: String): Pair<String, String> {
         val url = "https://i.instagram.com/api/v1/users/web_profile_info/?username=$username"
         var retryCount = 0
         var delayMs = INITIAL_DELAY
-
         while (retryCount < MAX_RETRIES) {
             if (job?.isCancelled == true) return "CANCELLED" to "Cancelled: $username"
-
             try {
                 val request = Request.Builder()
                     .url(url)
@@ -320,7 +290,6 @@ class MainActivity : AppCompatActivity() {
         updateResult("ERROR", result, username)
         return "ERROR" to result
     }
-
     private suspend fun updateResult(status: String, message: String, username: String) {
         withContext(Dispatchers.Main) {
             processedCount++
@@ -338,26 +307,22 @@ class MainActivity : AppCompatActivity() {
             updateStats()
         }
     }
-
     private suspend fun updateStatus(message: String, username: String) {
         withContext(Dispatchers.Main) {
             resultsAdapter.addItem(ResultItem("INFO", message))
         }
     }
-
     private fun updateProgress() {
         val percentage = if (usernames.size > 0) (processedCount * 100 / usernames.size) else 0
         binding.progressBar.progress = percentage
         binding.progressText.text = "Progress: $processedCount/${usernames.size} ($percentage%)"
     }
-
     private fun updateStats() {
         binding.activeCount.text = activeCount.toString()
         binding.availableCount.text = availableCount.toString()
         binding.errorCount.text = errorCount.toString()
         binding.totalCount.text = usernames.size.toString()
     }
-
     private fun resetStats() {
         processedCount = 0
         activeCount = 0
@@ -368,7 +333,6 @@ class MainActivity : AppCompatActivity() {
         updateProgress()
         updateStats()
     }
-
     private fun cancelProcessing() {
         job?.cancel()
         scope.launch {
@@ -378,7 +342,6 @@ class MainActivity : AppCompatActivity() {
         binding.downloadButton.visibility = if (activeAccounts.isNotEmpty()) View.VISIBLE else View.GONE
         showInfo("Processing cancelled")
     }
-
     private fun downloadResults() {
         if (activeAccounts.isEmpty()) {
             showError("No active accounts to download")
@@ -389,7 +352,6 @@ class MainActivity : AppCompatActivity() {
         val fileName = "final_${originalFileName}_${timestamp}.json"
         saveFileLauncher.launch(fileName)
     }
-
     private fun saveJsonToFile(uri: Uri) {
         try {
             val jsonArray = JSONArray(activeAccounts)
@@ -401,88 +363,100 @@ class MainActivity : AppCompatActivity() {
             showError("Failed to save file: ${e.message}")
         }
     }
-
-    private suspend fun convertJsonToExcel(uri: Uri) {
-        withContext(Dispatchers.Main) {
-            binding.conversionProgress.visibility = View.VISIBLE
-            binding.convertButton.isEnabled = false
-        }
+    
+    // FIXED convertJsonToExcel function
+    private fun convertJsonToExcel(uri: Uri) {
+        binding.conversionProgress.visibility = View.VISIBLE
+        binding.convertButton.isEnabled = false
         
         try {
-            withContext(Dispatchers.IO) {
-                contentResolver.openInputStream(jsonFileUri!!)?.use { inputStream ->
-                    val jsonString = inputStream.bufferedReader().use { it.readText() }
-                    val jsonArray = JSONArray(jsonString)
-                    
-                    // Create Excel workbook
-                    val workbook = XSSFWorkbook()
-                    val sheet = workbook.createSheet("Accounts")
-                    
-                    // Create header row with style
-                    val headerFont = workbook.createFont()
-                    headerFont.bold = true
-                    headerFont.color = IndexedColors.WHITE.index
-                    
-                    val headerStyle = workbook.createCellStyle()
-                    headerStyle.setFont(headerFont)
-                    headerStyle.fillForegroundColor = IndexedColors.BLUE.index
-                    headerStyle.fillPattern = FillPatternType.SOLID_FOREGROUND
-                    
-                    val headerRow = sheet.createRow(0)
-                    val headers = arrayOf("Username", "Password", "Authcode", "Email")
-                    headers.forEachIndexed { index, header ->
-                        val cell = headerRow.createCell(index)
-                        cell.setCellValue(header)
-                        cell.cellStyle = headerStyle
-                    }
-                    
-                    // Add data rows
-                    for (i in 0 until jsonArray.length()) {
-                        val obj = jsonArray.getJSONObject(i)
-                        val row = sheet.createRow(i + 1)
-                        
-                        row.createCell(0).setCellValue(obj.optString("username", ""))
-                        row.createCell(1).setCellValue(obj.optString("password", ""))
-                        row.createCell(2).setCellValue(obj.optString("auth_code", ""))
-                        row.createCell(3).setCellValue(obj.optString("email", ""))
-                    }
-                    
-                    // Auto-size columns
-                    for (i in 0 until headers.size) {
-                        sheet.autoSizeColumn(i)
-                    }
-                    
-                    // Save the workbook
-                    contentResolver.openOutputStream(uri)?.use { outputStream ->
-                        workbook.write(outputStream)
-                    }
-                    workbook.close()
-                }
+            // Check if JSON file URI is valid
+            if (jsonFileUri == null) {
+                throw Exception("No JSON file selected")
             }
             
-            withContext(Dispatchers.Main) {
-                binding.conversionProgress.visibility = View.GONE
-                binding.convertButton.isEnabled = true
-                showSuccess("File converted successfully!")
+            // Read JSON file
+            val inputStream = contentResolver.openInputStream(jsonFileUri!!)
+            if (inputStream == null) {
+                throw Exception("Failed to open JSON file")
             }
+            
+            val jsonString = inputStream.bufferedReader().use { it.readText() }
+            val jsonArray = JSONArray(jsonString)
+            
+            // Check if JSON array is empty
+            if (jsonArray.length() == 0) {
+                throw Exception("JSON file is empty")
+            }
+            
+            // Create Excel workbook
+            val workbook = XSSFWorkbook()
+            val sheet = workbook.createSheet("Accounts")
+            
+            // Create header row with style
+            val headerFont = workbook.createFont()
+            headerFont.bold = true
+            headerFont.color = IndexedColors.WHITE.index
+            
+            val headerStyle = workbook.createCellStyle()
+            headerStyle.setFont(headerFont)
+            headerStyle.fillForegroundColor = IndexedColors.BLUE.index
+            headerStyle.fillPattern = FillPatternType.SOLID_FOREGROUND
+            
+            val headerRow = sheet.createRow(0)
+            val headers = arrayOf("Username", "Password", "Authcode", "Email")
+            headers.forEachIndexed { index, header ->
+                val cell = headerRow.createCell(index)
+                cell.setCellValue(header)
+                cell.cellStyle = headerStyle
+            }
+            
+            // Add data rows
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                val row = sheet.createRow(i + 1)
+                
+                row.createCell(0).setCellValue(obj.optString("username", ""))
+                row.createCell(1).setCellValue(obj.optString("password", ""))
+                row.createCell(2).setCellValue(obj.optString("auth_code", ""))
+                row.createCell(3).setCellValue(obj.optString("email", ""))
+            }
+            
+            // Auto-size columns
+            for (i in 0 until headers.size) {
+                sheet.autoSizeColumn(i)
+            }
+            
+            // Save the workbook
+            val outputStream = contentResolver.openOutputStream(uri)
+            if (outputStream == null) {
+                throw Exception("Failed to open output file")
+            }
+            
+            outputStream.use { stream ->
+                workbook.write(stream)
+                stream.flush() // Ensure all data is written
+            }
+            
+            workbook.close()
+            
+            binding.conversionProgress.visibility = View.GONE
+            binding.convertButton.isEnabled = true
+            showSuccess("File converted successfully! (${jsonArray.length()} records)")
         } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                binding.conversionProgress.visibility = View.GONE
-                binding.convertButton.isEnabled = true
-                showError("Conversion failed: ${e.message}")
-                e.printStackTrace()
-            }
+            e.printStackTrace() // Log the error for debugging
+            binding.conversionProgress.visibility = View.GONE
+            binding.convertButton.isEnabled = true
+            showError("Conversion failed: ${e.message}")
         }
     }
-
+    
     private fun showSuccess(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
-
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
-
     private fun showInfo(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
@@ -492,17 +466,17 @@ data class ResultItem(val status: String, val message: String)
 
 class ResultsAdapter : androidx.recyclerview.widget.RecyclerView.Adapter<ResultsAdapter.ViewHolder>() {
     private val items = mutableListOf<ResultItem>()
-
+    
     class ViewHolder(view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.icon)
         val message: TextView = view.findViewById(R.id.message)
     }
-
+    
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.result_item, parent, false)
         return ViewHolder(view)
     }
-
+    
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.message.text = item.message
@@ -537,14 +511,14 @@ class ResultsAdapter : androidx.recyclerview.widget.RecyclerView.Adapter<Results
             }
         }
     }
-
+    
     override fun getItemCount() = items.size
-
+    
     fun addItem(item: ResultItem) {
         items.add(0, item)
         notifyItemInserted(0)
     }
-
+    
     fun clear() {
         items.clear()
         notifyDataSetChanged()
