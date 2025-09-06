@@ -65,6 +65,7 @@ jobs:
         sed -i '/import java.util.Random/a \
         import android.graphics.Color\
         import android.view.LayoutInflater\
+        import android.view.ViewGroup\
         import android.widget.ImageView\
         import android.widget.TextView\
         import androidx.core.content.ContextCompat\
@@ -73,7 +74,7 @@ jobs:
         sed -i 's/getColorStateList(/ContextCompat.getColorStateList(this, /g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
         sed -i 's/getColor(/ContextCompat.getColor(this, /g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
         
-        sed -i 's/Headers.of(headers)/headers.toHeaders()/g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
+        sed -i 's/Headers.of(headers)/Headers.Builder().apply { headers.forEach { add(it.key, it.value) } }.build()/g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
         
         sed -i 's/response.body.string()/response.body?.string()/' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
         
