@@ -22,6 +22,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.apache.poi.ss.usermodel.*
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -55,6 +57,10 @@ class MainActivity : AppCompatActivity() {
     private var cancelledCount = 0
     private var originalFileName = ""
 
+    // Converter variables
+    private var jsonFileUri: Uri? = null
+    private var jsonFileName: String = ""
+
     private val headers = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36",
         "x-ig-app-id" to "936619743392459",
@@ -87,6 +93,24 @@ class MainActivity : AppCompatActivity() {
         uri?.let { saveJsonToFile(it) }
     }
 
+    // Launcher for JSON file selection
+    private val pickJsonFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let {
+            jsonFileUri = it
+            jsonFileName = it.path?.split("/")?.last() ?: "selected_file.json"
+            binding.selectedJsonFile.text = jsonFileName
+            binding.convertButton.isEnabled = true
+            binding.pickJsonButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_check_circle, 0, 0, 0)
+            binding.pickJsonButton.backgroundTintList = ContextCompat.getColorStateList(this, R.color.green_50)
+            binding.pickJsonButton.setTextColor(ContextCompat.getColor(this, R.color.green_700))
+        }
+    }
+
+    // Launcher for saving Excel file
+    private val saveExcelLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri: Uri? ->
+        uri?.let { convertJsonToExcel(it) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -94,7 +118,7 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupClickListeners()
-        switchTab(true) // Default to file tab
+        switchTab(0) // Default to file tab
     }
 
     private fun setupRecyclerView() {
@@ -103,34 +127,59 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        binding.btnFile.setOnClickListener { switchTab(true) }
-        binding.btnText.setOnClickListener { switchTab(false) }
+        binding.btnFile.setOnClickListener { switchTab(0) }
+        binding.btnText.setOnClickListener { switchTab(1) }
+        binding.btnConverter.setOnClickListener { switchTab(2) }
 
         binding.pickFileButton.setOnClickListener {
             pickFileLauncher.launch(arrayOf("*/*"))
         }
 
+        binding.pickJsonButton.setOnClickListener {
+            pickJsonFileLauncher.launch(arrayOf("application/json"))
+        }
+
         binding.startFileButton.setOnClickListener { startProcessingFromFile() }
         binding.startTextButton.setOnClickListener { startProcessingFromText() }
+        binding.convertButton.setOnClickListener { 
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val fileName = "${jsonFileName.substringBeforeLast(".")}_$timestamp.xlsx"
+            saveExcelLauncher.launch(fileName)
+        }
         binding.cancelButton.setOnClickListener { cancelProcessing() }
         binding.downloadButton.setOnClickListener { downloadResults() }
     }
 
-    private fun switchTab(isFile: Boolean) {
-        if (isFile) {
-            binding.fileSection.visibility = View.VISIBLE
-            binding.textSection.visibility = View.GONE
-            binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
-            binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
-            binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
-            binding.btnText.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
-        } else {
-            binding.fileSection.visibility = View.GONE
-            binding.textSection.visibility = View.VISIBLE
-            binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
-            binding.btnText.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
-            binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
-            binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
+    private fun switchTab(tabIndex: Int) {
+        // Hide all sections first
+        binding.fileSection.visibility = View.GONE
+        binding.textSection.visibility = View.GONE
+        binding.converterSection.visibility = View.GONE
+        
+        // Reset all tab styles
+        binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
+        binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
+        binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
+        binding.btnText.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
+        binding.btnConverter.backgroundTintList = ContextCompat.getColorStateList(this, R.color.gray_100)
+        binding.btnConverter.setTextColor(ContextCompat.getColor(this, R.color.gray_600))
+        
+        when (tabIndex) {
+            0 -> { // File tab
+                binding.fileSection.visibility = View.VISIBLE
+                binding.btnFile.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
+                binding.btnFile.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
+            }
+            1 -> { // Text tab
+                binding.textSection.visibility = View.VISIBLE
+                binding.btnText.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
+                binding.btnText.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
+            }
+            2 -> { // Converter tab
+                binding.converterSection.visibility = View.VISIBLE
+                binding.btnConverter.backgroundTintList = ContextCompat.getColorStateList(this, R.color.primary_light)
+                binding.btnConverter.setTextColor(ContextCompat.getColor(this, R.color.primary_dark))
+            }
         }
     }
 
@@ -191,6 +240,7 @@ class MainActivity : AppCompatActivity() {
         binding.progressSection.visibility = View.VISIBLE
         binding.fileSection.visibility = View.GONE
         binding.textSection.visibility = View.GONE
+        binding.converterSection.visibility = View.GONE
         binding.downloadButton.visibility = View.GONE
         binding.cancelButton.visibility = View.VISIBLE
         updateStats()
@@ -344,6 +394,70 @@ class MainActivity : AppCompatActivity() {
             showSuccess("Results saved successfully! (${activeAccounts.size} active accounts)")
         } catch (e: Exception) {
             showError("Failed to save file: ${e.message}")
+        }
+    }
+
+    private fun convertJsonToExcel(uri: Uri) {
+        binding.conversionProgress.visibility = View.VISIBLE
+        binding.convertButton.isEnabled = false
+        
+        try {
+            contentResolver.openInputStream(jsonFileUri!!)?.use { inputStream ->
+                val jsonString = inputStream.bufferedReader().use { it.readText() }
+                val jsonArray = JSONArray(jsonString)
+                
+                // Create Excel workbook
+                val workbook = XSSFWorkbook()
+                val sheet = workbook.createSheet("Accounts")
+                
+                // Create header row with style
+                val headerFont = workbook.createFont()
+                headerFont.bold = true
+                headerFont.color = IndexedColors.WHITE.index
+                
+                val headerStyle = workbook.createCellStyle()
+                headerStyle.setFont(headerFont)
+                headerStyle.fillForegroundColor = IndexedColors.BLUE.index
+                headerStyle.fillPattern = FillPatternType.SOLID_FOREGROUND
+                
+                val headerRow = sheet.createRow(0)
+                val headers = arrayOf("Username", "Password", "Authcode", "Email")
+                headers.forEachIndexed { index, header ->
+                    val cell = headerRow.createCell(index)
+                    cell.setCellValue(header)
+                    cell.cellStyle = headerStyle
+                }
+                
+                // Add data rows
+                for (i in 0 until jsonArray.length()) {
+                    val obj = jsonArray.getJSONObject(i)
+                    val row = sheet.createRow(i + 1)
+                    
+                    row.createCell(0).setCellValue(obj.optString("username", ""))
+                    row.createCell(1).setCellValue(obj.optString("password", ""))
+                    row.createCell(2).setCellValue(obj.optString("auth_code", ""))
+                    row.createCell(3).setCellValue(obj.optString("email", ""))
+                }
+                
+                // Auto-size columns
+                for (i in 0 until headers.size) {
+                    sheet.autoSizeColumn(i)
+                }
+                
+                // Save the workbook
+                contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    workbook.write(outputStream)
+                    workbook.close()
+                }
+                
+                binding.conversionProgress.visibility = View.GONE
+                binding.convertButton.isEnabled = true
+                showSuccess("File converted successfully!")
+            }
+        } catch (e: Exception) {
+            binding.conversionProgress.visibility = View.GONE
+            binding.convertButton.isEnabled = true
+            showError("Conversion failed: ${e.message}")
         }
     }
 
