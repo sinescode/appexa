@@ -72,6 +72,18 @@
                 android:drawableStart="@drawable/ic_keyboard"
                 android:drawablePadding="4dp"
                 style="@style/Widget.AppCompat.Button.Borderless" />
+
+            <Button
+                android:id="@+id/btnConverter"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Converter"
+                android:backgroundTint="#F3F4F6"
+                android:textColor="#6B7280"
+                android:drawableStart="@drawable/ic_convert"
+                android:drawablePadding="4dp"
+                style="@style/Widget.AppCompat.Button.Borderless" />
         </LinearLayout>
 
         <!-- File Section -->
@@ -175,6 +187,81 @@
                 android:layout_marginTop="16dp"
                 android:drawableStart="@drawable/ic_search"
                 android:drawablePadding="4dp" />
+        </LinearLayout>
+
+        <!-- Converter Section -->
+        <LinearLayout
+            android:id="@+id/converterSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/section_background"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Convert JSON to Excel"
+                android:textSize="18sp"
+                android:textColor="#4F46E5"
+                android:textStyle="bold"
+                app:drawableStartCompat="@drawable/ic_convert"
+                android:drawablePadding="8dp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Select a JSON file to convert to Excel format."
+                android:textSize="12sp"
+                android:textColor="#6B7280"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/pickJsonButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Select JSON file..."
+                android:backgroundTint="#EEF2FF"
+                android:textColor="#4F46E5"
+                android:drawableStart="@drawable/ic_upload"
+                android:drawablePadding="4dp"
+                style="@style/Widget.AppCompat.Button.Borderless" />
+
+            <TextView
+                android:id="@+id/selectedJsonFile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No file selected"
+                android:textSize="12sp"
+                android:textColor="#6B7280"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/convertButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Convert to Excel"
+                android:backgroundTint="#DC2626"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="16dp"
+                android:drawableStart="@drawable/ic_convert"
+                android:drawablePadding="4dp"
+                android:enabled="false" />
+
+            <ProgressBar
+                android:id="@+id/conversionProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:progress="0"
+                android:progressTint="#16A34A"
+                android:backgroundTint="#E5E7EB"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- Progress Section -->
