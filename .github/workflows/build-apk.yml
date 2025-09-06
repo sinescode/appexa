@@ -21,6 +21,37 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Create missing resources
+      run: |
+        mkdir -p app/src/main/res/xml
+        echo '<?xml version="1.0" encoding="utf-8"?>
+        <full-backup-content>
+        </full-backup-content>' > app/src/main/res/xml/backup_rules.xml
+        
+        echo '<?xml version="1.0" encoding="utf-8"?>
+        <data-extraction-rules>
+        </data-extraction-rules>' > app/src/main/res/xml/data_extraction_rules.xml
+        
+        mkdir -p app/src/main/res/values
+        echo '<?xml version="1.0" encoding="utf-8"?>
+        <resources>
+          <style name="Theme.Instacheck" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+          </style>
+        </resources>' > app/src/main/res/values/themes.xml
+        
+        mkdir -p app/src/main/res/mipmap-anydpi-v26
+        echo '<?xml version="1.0" encoding="utf-8"?>
+        <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+          <background android:drawable="@android:color/white" />
+          <foreground android:drawable="@android:drawable/sym_def_app_icon" />
+        </adaptive-icon>' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+        
+        echo '<?xml version="1.0" encoding="utf-8"?>
+        <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+          <background android:drawable="@android:color/white" />
+          <foreground android:drawable="@android:drawable/sym_def_app_icon" />
+        </adaptive-icon>' > app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
