@@ -52,6 +52,35 @@ jobs:
           <foreground android:drawable="@android:drawable/sym_def_app_icon" />
         </adaptive-icon>' > app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
+    - name: Enable View Binding
+      run: |
+        sed -i '/defaultConfig {/i \
+        buildFeatures {\
+            viewBinding = true\
+        }\
+        ' app/build.gradle.kts
+
+    - name: Fix MainActivity.kt
+      run: |
+        sed -i '/import java.util.Random/a \
+        import android.graphics.Color\
+        import android.view.LayoutInflater\
+        import android.widget.ImageView\
+        import android.widget.TextView\
+        import androidx.core.content.ContextCompat\
+        import kotlinx.coroutines.sync.withPermit' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
+        
+        sed -i 's/getColorStateList(/ContextCompat.getColorStateList(this, /g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
+        sed -i 's/getColor(/ContextCompat.getColor(this, /g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
+        
+        sed -i 's/Headers.of(headers)/headers.toHeaders()/g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
+        
+        sed -i 's/response.body.string()/response.body?.string()/' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
+        
+        sed -i 's/Random().nextLong(1000)/Random().nextInt(1000).toLong()/g' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
+        
+        sed -i 's/it.lastPathSegment/it.path?.split("\/")?.last()/' app/src/main/java/com/turjaun/instacheck/MainActivity.kt
+
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
