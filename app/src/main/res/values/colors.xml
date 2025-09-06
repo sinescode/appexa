@@ -1,7 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="indigo_50">#EEF2FF</color>
-    <color name="indigo_700">#4338CA</color>
+    <!-- Primary Colors -->
+    <color name="primary_dark">#4338CA</color>
+    <color name="primary_light">#EEF2FF</color>
+    <color name="primary_gradient_start">#6366F1</color>
+    <color name="primary_gradient_end">#8B5CF6</color>
+    
+    <!-- Surface Colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="surface_primary">#FAFBFF</color>
+    <color name="background_primary">#F8FAFC</color>
+    <color name="input_background">#F9FAFB</color>
+    
+    <!-- Gray Scale -->
+    <color name="gray_50">#F9FAFB</color>
     <color name="gray_100">#F3F4F6</color>
+    <color name="gray_200">#E5E7EB</color>
+    <color name="gray_600">#4B5563</color>
     <color name="gray_700">#374151</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#1F2937</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="text_hint">#9CA3AF</color>
+    
+    <!-- Status Colors -->
+    <color name="success_primary">#10B981</color>
+    <color name="success_light">#D1FAE5</color>
+    <color name="success_dark">#059669</color>
+    
+    <color name="error_primary">#EF4444</color>
+    <color name="error_light">#FECACA</color>
+    <color name="error_dark">#DC2626</color>
+    
+    <color name="warning_primary">#F59E0B</color>
+    <color name="warning_light">#FEF3C7</color>
+    <color name="warning_dark">#D97706</color>
+    
+    <color name="info_primary">#3B82F6</color>
+    <color name="info_light">#DBEAFE</color>
+    <color name="info_dark">#2563EB</color>
+    
+    <color name="green_50">#ECFDF5</color>
+    <color name="green_700">#047857</color>
+    
+    <!-- Transparency Colors -->
+    <color name="white_80">#CCFFFFFF</color>
+    <color name="white_90">#E6FFFFFF</color>
+    <color name="black_30">#4D000000</color>
 </resources>
