@@ -22,8 +22,9 @@ import kotlinx.coroutines.withContext
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.apache.poi.hssf.usermodel.HSSFWorkbook
+import org.apache.poi.hssf.util.HSSFColor
 import org.apache.poi.ss.usermodel.*
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -106,8 +107,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Launcher for saving Excel file
-    private val saveExcelLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri: Uri? ->
+    // Launcher for saving Excel file (change MIME type to .xls)
+    private val saveExcelLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.ms-excel")) { uri: Uri? ->
         uri?.let { convertJsonToExcel(it) }
     }
 
@@ -143,7 +144,7 @@ class MainActivity : AppCompatActivity() {
         binding.startTextButton.setOnClickListener { startProcessingFromText() }
         binding.convertButton.setOnClickListener { 
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val fileName = "${jsonFileName.substringBeforeLast(".")}_$timestamp.xlsx"
+            val fileName = "${jsonFileName.substringBeforeLast(".")}_$timestamp.xls"
             saveExcelLauncher.launch(fileName)
         }
         binding.cancelButton.setOnClickListener { cancelProcessing() }
@@ -406,18 +407,18 @@ class MainActivity : AppCompatActivity() {
                 val jsonString = inputStream.bufferedReader().use { it.readText() }
                 val jsonArray = JSONArray(jsonString)
                 
-                // Create Excel workbook
-                val workbook = XSSFWorkbook()
+                // Create Excel workbook (use HSSF for .xls compatibility on Android)
+                val workbook: Workbook = HSSFWorkbook()
                 val sheet = workbook.createSheet("Accounts")
                 
                 // Create header row with style
                 val headerFont = workbook.createFont()
                 headerFont.bold = true
-                headerFont.color = IndexedColors.WHITE.index
+                headerFont.color = HSSFColor.HSSFColorPredefined.WHITE.getIndex()
                 
                 val headerStyle = workbook.createCellStyle()
                 headerStyle.setFont(headerFont)
-                headerStyle.fillForegroundColor = IndexedColors.BLUE.index
+                headerStyle.fillForegroundColor = HSSFColor.HSSFColorPredefined.BLUE.getIndex()
                 headerStyle.fillPattern = FillPatternType.SOLID_FOREGROUND
                 
                 val headerRow = sheet.createRow(0)
@@ -447,14 +448,14 @@ class MainActivity : AppCompatActivity() {
                 // Save the workbook
                 contentResolver.openOutputStream(uri)?.use { outputStream ->
                     workbook.write(outputStream)
-                    workbook.close()
                 }
+                workbook.close()  // Close after writing and outside the stream block
                 
                 binding.conversionProgress.visibility = View.GONE
                 binding.convertButton.isEnabled = true
                 showSuccess("File converted successfully!")
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {  // Broaden to catch Errors like OutOfMemoryError
             binding.conversionProgress.visibility = View.GONE
             binding.convertButton.isEnabled = true
             showError("Conversion failed: ${e.message}")
