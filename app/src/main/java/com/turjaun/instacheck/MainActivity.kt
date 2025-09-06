@@ -17,9 +17,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.withPermit
+import kotlinx.coroutines.withContext
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -185,8 +184,11 @@ class MainActivity : AppCompatActivity() {
             val client = OkHttpClient()
             val deferreds = usernames.map { username ->
                 async {
-                    semaphore.withPermit {
+                    semaphore.acquire() // Acquire a permit
+                    try {
                         checkUsername(client, username)
+                    } finally {
+                        semaphore.release() // Release the permit
                     }
                 }
             }
