@@ -7,9 +7,9 @@ android {
     namespace = "com.turjaun.instacheck"
     compileSdk = 34
 
-        buildFeatures {
-            viewBinding = true
-        }
+    buildFeatures {
+        viewBinding = true
+    }
         
     defaultConfig {
         applicationId = "com.turjaun.instacheck"
@@ -17,6 +17,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        multiDexEnabled = true // Required for Apache POI
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -37,12 +38,6 @@ android {
 }
 
 dependencies {
-    implementation 'org.apache.poi:poi:5.2.3'
-    implementation 'org.apache.poi:poi-ooxml:5.2.3'
-    implementation 'org.apache.xmlbeans:xmlbeans:5.1.1'
-    implementation 'commons-io:commons-io:2.11.0'
-    implementation 'org.apache.commons:commons-collections4:4.4'
-    implementation 'org.apache.commons:commons-compress:1.21'
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
@@ -50,11 +45,23 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
-    // Kotlin Coroutines - ADD BOTH
+    // Kotlin Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     
     implementation("org.json:json:20240303") // For JSON parsing
+    
+    // Apache POI for Excel generation
+    implementation("org.apache.poi:poi:5.2.3")
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
+    implementation("org.apache.xmlbeans:xmlbeans:5.1.1")
+    implementation("commons-io:commons-io:2.11.0")
+    implementation("org.apache.commons:commons-collections4:4.4")
+    implementation("org.apache.commons:commons-compress:1.21")
+    
+    // For handling larger apps with many dependencies
+    implementation("androidx.multidex:multidex:2.0.1")
+    
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
