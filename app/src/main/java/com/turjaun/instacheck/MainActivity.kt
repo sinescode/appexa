@@ -42,6 +42,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.ByteArrayOutputStream
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.ss.usermodel.Cell
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -243,41 +244,28 @@ class MainActivity : AppCompatActivity() {
                 usernames = reader.readLines().map { it.trim() }.filter { it.isNotEmpty() }
                 usernames.forEach { accountData[it] = JSONObject().put("username", it) }
             } else { // Assume JSON
-                val jsonStr = reader.readText()
                 try {
+                    val jsonStr = reader.readText()
                     val array = JSONArray(jsonStr)
-                    usernames = (0 until array.length()).map {
+                    val tempUsernames = mutableListOf<String>()
+                    val tempAccountData = mutableMapOf<String, JSONObject>()
+                    for (i in 0 until array.length()) {
                         try {
-                            array.getJSONObject(it).getString("username")
-                        } catch (e: Exception) {
-                            Log.w("LoadUsernames", "Could not get username from object at index $it", e)
-                            "" // Return empty string if username is missing
-                        }
-                    }.filter { it.isNotEmpty() } // Filter out any empty usernames
-
-                    // Populate accountData with full JSON objects from the array
-                    usernames.forEachIndexed { i, u ->
-                        try {
-                            // Find the correct JSONObject for username 'u'
-                            val matchingObject = (0 until array.length()).firstOrNull {
-                                try {
-                                    array.getJSONObject(it).getString("username") == u
-                                } catch (e: Exception) { false }
-                            }?.let { array.getJSONObject(it) }
-                            if (matchingObject != null) {
-                                accountData[u] = matchingObject
-                            } else {
-                                // If for some reason the username wasn't found again, create a basic entry
-                                accountData[u] = JSONObject().put("username", u)
+                            val obj = array.getJSONObject(i)
+                            val un = obj.getString("username")
+                            if (un.isNotBlank()) {
+                                tempUsernames.add(un)
+                                tempAccountData[un] = obj
                             }
                         } catch (e: Exception) {
-                            Log.printStackTrace("LoadUsernames", "Error processing JSON object for username $u", e)
-                            accountData[u] = JSONObject().put("username", u) // Fallback
+                            Log.w("LoadUsernames", "Skipping invalid object at index $i: ${e.message}", e)
                         }
                     }
+                    usernames = tempUsernames
+                    accountData = tempAccountData
                 } catch (e: JSONException) {
                     showError("Invalid JSON format: ${e.message}")
-                    usernames = emptyList() // Clear usernames if JSON is invalid
+                    usernames = emptyList()
                     accountData.clear()
                 }
             }
@@ -716,6 +704,6 @@ class ResultsAdapter : androidx.recyclerview.widget.RecyclerView.Adapter<Results
 }
 
 // Add this extension function for simpler logging
-fun Log.printStackTrace(tag: String, message: String, throwable: Throwable? = null) {
-    this.e(tag, message, throwable)
+fun Log.Companion.printStackTrace(tag: String, message: String, throwable: Throwable? = null) {
+    Log.e(tag, message, throwable)
 }
