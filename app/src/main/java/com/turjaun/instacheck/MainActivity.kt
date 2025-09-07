@@ -100,6 +100,14 @@ class MainActivity : AppCompatActivity() {
     private val pickJsonFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             jsonFileUri = it
+            // Persist read permission so we can read the file later (across process death)
+            try {
+                val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                contentResolver.takePersistableUriPermission(it, takeFlags)
+            } catch (e: Exception) {
+                Log.w("PickJson", "Could not take persistable permission: ${e.message}")
+            }
+    
             jsonFileName = it.path?.split("/")?.last() ?: "selected_file.json"
             binding.selectedJsonFile.text = jsonFileName
             binding.convertButton.isEnabled = true // Enable convert button once a JSON is selected
@@ -108,6 +116,7 @@ class MainActivity : AppCompatActivity() {
             binding.pickJsonButton.setTextColor(ContextCompat.getColor(this, R.color.green_700))
         }
     }
+
 
     private val saveExcelLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { uri: Uri? ->
         uri?.let { convertJsonToExcel(it) }
@@ -468,37 +477,40 @@ class MainActivity : AppCompatActivity() {
         binding.conversionProgress.visibility = View.VISIBLE
         binding.convertButton.isEnabled = false
         binding.pickJsonButton.isEnabled = false // Disable picking another file during conversion
-
-        scope.launch(Dispatchers.IO) { // Perform I/O operations on the IO dispatcher
-            var workbook: XSSFWorkbook? = null // Declare here to ensure it's closed in finally
-            var bos: ByteArrayOutputStream? = null // Declare here for finally block
-
+    
+        scope.launch(Dispatchers.IO) {
+            var workbook: XSSFWorkbook? = null
+            var bos: ByteArrayOutputStream? = null
+    
             try {
-                Log.d("ExcelConversion", "Starting conversion process for URI: $jsonFileUri")
-
+                Log.d("ExcelConversion", "Starting conversion process for URI: $jsonFileUri -> output: $uri")
+    
                 if (jsonFileUri == null) {
-                    Log.e("ExcelConversion", "No JSON file selected for conversion.")
-                    // Update UI on main thread
                     withContext(Dispatchers.Main) {
                         showError("No JSON file selected. Please pick a JSON file first.")
                         resetConverterUI()
                     }
                     return@launch
                 }
-
-                // Read the JSON string from the selected URI
-                val jsonString = contentResolver.openInputStream(jsonFileUri!!)?.use { inputStream ->
-                    inputStream.bufferedReader().use { it.readText() }
-                } ?: run {
-                    Log.e("ExcelConversion", "Could not open or read from JSON file URI: $jsonFileUri")
+    
+                // Read JSON safely
+                val jsonString = try {
+                    contentResolver.openInputStream(jsonFileUri!!)?.use { inputStream ->
+                        inputStream.bufferedReader().use { it.readText() }
+                    }
+                } catch (e: Exception) {
+                    Log.e("ExcelConversion", "Failed to read input JSON: ${e.message}", e)
+                    null
+                }
+    
+                if (jsonString.isNullOrEmpty()) {
                     withContext(Dispatchers.Main) {
-                        showError("Failed to read JSON file.")
+                        showError("Failed to read JSON file or file is empty.")
                         resetConverterUI()
                     }
                     return@launch
                 }
-
-                // Parse the JSON string into a JSONArray
+    
                 val jsonArray = try {
                     JSONArray(jsonString)
                 } catch (e: Exception) {
@@ -509,54 +521,43 @@ class MainActivity : AppCompatActivity() {
                     }
                     return@launch
                 }
-
+    
                 if (jsonArray.length() == 0) {
-                    Log.e("ExcelConversion", "JSON file is empty or contains no records.")
                     withContext(Dispatchers.Main) {
                         showError("The selected JSON file is empty. No data to convert.")
                         resetConverterUI()
                     }
                     return@launch
                 }
-
-                // Initialize Excel workbook and sheet
+    
+                // Build workbook
                 workbook = XSSFWorkbook()
                 val sheet = workbook.createSheet("Instagram Accounts")
-
-                // Define header row and cells
-                val headerRow: Row = sheet.createRow(0)
-                val headers = arrayOf("Username", "Password", "Auth Code", "Email") // Assumed fields
+    
+                // Header row
+                val headerRow = sheet.createRow(0)
+                val headers = arrayOf("Username", "Password", "Auth Code", "Email")
                 headers.forEachIndexed { index, header ->
-                    val cell: Cell = headerRow.createCell(index)
-                    cell.setCellValue(header)
+                    headerRow.createCell(index).setCellValue(header)
                 }
-
-                // Populate data rows from JSON objects
+    
+                // Populate rows
                 var validRowCount = 0
                 for (i in 0 until jsonArray.length()) {
                     try {
                         val jsonObj = jsonArray.getJSONObject(i)
-                        val dataRow: Row = sheet.createRow(validRowCount + 1) // +1 for header
-
-                        // Safely get values using optString to avoid NullPointerException
+                        val dataRow = sheet.createRow(validRowCount + 1)
                         dataRow.createCell(0).setCellValue(jsonObj.optString("username", ""))
                         dataRow.createCell(1).setCellValue(jsonObj.optString("password", ""))
                         dataRow.createCell(2).setCellValue(jsonObj.optString("auth_code", ""))
                         dataRow.createCell(3).setCellValue(jsonObj.optString("email", ""))
-
                         validRowCount++
-
-                        // Log progress periodically for large files
-                        if (validRowCount % 100 == 0) {
-                            Log.d("ExcelConversion", "Processed $validRowCount rows for Excel.")
-                        }
                     } catch (e: Exception) {
                         Log.w("ExcelConversion", "Skipping row $i due to error: ${e.message}")
-                        // Continue to the next row even if one is malformed
                     }
                 }
-
-                // Auto-size columns for better readability (best effort)
+    
+                // Auto-size columns (best-effort)
                 for (i in 0 until headers.size) {
                     try {
                         sheet.autoSizeColumn(i)
@@ -564,50 +565,68 @@ class MainActivity : AppCompatActivity() {
                         Log.w("ExcelConversion", "Could not auto-size column $i: ${e.message}")
                     }
                 }
-
-                // Write the workbook to a ByteArrayOutputStream
+    
+                // Write workbook to byte array
                 bos = ByteArrayOutputStream()
                 workbook.write(bos)
                 bos.flush()
                 val bytes = bos.toByteArray()
-
-                // Write the byte array to the output URI provided by the user
-                val writtenBytes = contentResolver.openOutputStream(uri)?.use { out ->
-                    out.write(bytes)
-                    out.flush()
-                    bytes.size // Return the number of bytes written
-                } ?: run {
-                    Log.e("ExcelConversion", "Could not open output stream for URI: $uri")
+    
+                if (bytes.isEmpty()) {
+                    Log.e("ExcelConversion", "Workbook produced zero bytes before writing out.")
                     withContext(Dispatchers.Main) {
-                        showError("Cannot save the Excel file to the selected location.")
+                        showError("Excel generation failed: empty workbook.")
                         resetConverterUI()
                     }
                     return@launch
                 }
-
+    
+                // Use openFileDescriptor + FileOutputStream for robust writing
+                val writtenBytes = try {
+                    contentResolver.openFileDescriptor(uri, "w")?.use { pfd ->
+                        FileOutputStream(pfd.fileDescriptor).use { out ->
+                            out.write(bytes)
+                            out.fd.sync() // ensure it's flushed to disk if possible
+                        }
+                        bytes.size
+                    } ?: run {
+                        Log.e("ExcelConversion", "Could not open output file descriptor for URI: $uri")
+                        -1
+                    }
+                } catch (e: Exception) {
+                    Log.e("ExcelConversion", "Error writing bytes to output URI: ${e.message}", e)
+                    -1
+                }
+    
+                if (writtenBytes <= 0) {
+                    withContext(Dispatchers.Main) {
+                        showError("Failed to save Excel file (wrote $writtenBytes bytes).")
+                        resetConverterUI()
+                    }
+                    return@launch
+                }
+    
                 Log.d("ExcelConversion", "Successfully wrote $writtenBytes bytes to Excel file.")
-
-                // Update UI on main thread upon successful conversion
+    
                 withContext(Dispatchers.Main) {
                     showSuccess("Excel file created successfully with $validRowCount records!")
                     resetConverterUI()
                 }
-
+    
             } catch (e: Exception) {
                 Log.e("ExcelConversion", "An unexpected error occurred during Excel conversion.", e)
-                // Update UI on main thread to show the error
                 withContext(Dispatchers.Main) {
                     showError("Excel conversion failed: ${e.localizedMessage ?: "Unknown error"}")
                     resetConverterUI()
                 }
             } finally {
-                // Ensure resources are closed regardless of success or failure
                 try { workbook?.close() } catch (ignored: Exception) { /* ignore */ }
                 try { bos?.close() } catch (ignored: Exception) { /* ignore */ }
                 Log.d("ExcelConversion", "Workbook and ByteArrayOutputStream closed.")
             }
         }
     }
+
 
     /**
      * Resets the UI elements for the converter tab after conversion or on error.
